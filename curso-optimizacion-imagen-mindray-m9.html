@@ -1,0 +1,1448 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Optimización de imagen en el Mindray M9 · Curso práctico</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --navy:#0D2B45; --deep:#081E33; --panel:#103452; --line:#1F4B70;
+  --amber:#C4923A; --amber-soft:rgba(196,146,58,.13);
+  --bone:#ECE7DC; --mist:#9DB1C2;
+  --f-head:"Space Grotesk",system-ui,sans-serif;
+  --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{margin:0;background:var(--navy);color:var(--bone);font:400 17px/1.62 var(--f-body);-webkit-font-smoothing:antialiased}
+a{color:var(--amber)}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px}
+
+/* Barra superior */
+.top{position:sticky;top:0;z-index:20;background:var(--deep);border-bottom:1px solid var(--line)}
+.top-in{display:flex;align-items:center;gap:12px;padding:10px 16px;max-width:980px;margin:0 auto}
+.top-title{font:600 15px/1.2 var(--f-head);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.top-title small{display:block;font:400 12px var(--f-body);color:var(--mist)}
+.btn-menu{background:none;border:1px solid var(--line);color:var(--bone);border-radius:8px;padding:8px 12px;font:500 14px var(--f-body);cursor:pointer}
+.bar{height:3px;background:var(--line)}
+.bar span{display:block;height:100%;width:0;background:var(--amber);transition:width .4s}
+
+/* Índice */
+.drawer{position:fixed;inset:0;z-index:30;display:none}
+.drawer.open{display:block}
+.drawer-bg{position:absolute;inset:0;background:rgba(4,14,25,.7)}
+.drawer-panel{position:absolute;top:0;bottom:0;left:0;width:min(88vw,380px);background:var(--deep);border-right:1px solid var(--line);overflow-y:auto;padding:18px 0 40px}
+.drawer-panel h2{font:600 18px var(--f-head);margin:0 20px 12px;border-top:0;padding-top:0}
+.toc{list-style:none;margin:0;padding:0}
+.toc a{display:grid;grid-template-columns:34px 1fr 18px;gap:8px;align-items:baseline;padding:10px 20px;color:var(--bone);text-decoration:none;font-size:15px;line-height:1.35}
+.toc a:hover,.toc a[aria-current="page"]{background:var(--panel)}
+.toc .n{font:500 13px var(--f-mono);color:var(--mist)}
+.toc .ok{color:var(--amber);font-size:14px}
+.toc .sep{padding:14px 20px 4px;font-size:13px;color:var(--mist)}
+
+/* Contenido */
+main{max-width:760px;margin:0 auto;padding:24px 20px 80px}
+.mod{display:none}
+.mod.show{display:block}
+.mod-n{font:500 14px var(--f-mono);color:var(--amber);margin:8px 0 0}
+h1{font:700 clamp(28px,6vw,40px)/1.12 var(--f-head);letter-spacing:-.01em;margin:6px 0 14px}
+h2{font:600 23px/1.25 var(--f-head);margin:40px 0 10px;padding-top:18px;border-top:1px solid var(--line)}
+h3{font:600 18px/1.3 var(--f-head);margin:26px 0 8px}
+p{margin:0 0 14px}
+.lead{font-size:19px;color:var(--bone)}
+.muted{color:var(--mist)}
+ul,ol{padding-left:22px;margin:0 0 16px}
+li{margin-bottom:6px}
+strong{font-weight:600;color:#fff}
+.k{font:500 .88em var(--f-mono);color:var(--amber);background:var(--amber-soft);padding:1px 5px;border-radius:4px;white-space:nowrap}
+
+/* Objetivos */
+.goals{background:var(--panel);border-radius:12px;padding:16px 18px;margin:18px 0 8px}
+.goals p{margin:0 0 6px;font-weight:600}
+.goals ul{margin:0}
+
+/* Bloque de control */
+.ctl{border-left:2px solid var(--line);padding:4px 0 4px 16px;margin:18px 0}
+.ctl h4{margin:0 0 6px;font:500 16px var(--f-mono);color:var(--amber)}
+.ctl h4 span{font:400 14px var(--f-body);color:var(--mist);margin-left:6px}
+.ctl dl{margin:0;display:grid;grid-template-columns:118px 1fr;gap:4px 12px;font-size:15.5px}
+.ctl dt{color:var(--mist)}
+.ctl dd{margin:0}
+@media (max-width:520px){.ctl dl{grid-template-columns:1fr}.ctl dt{margin-top:6px}}
+
+/* Llamados */
+.call{border-radius:10px;padding:14px 16px;margin:18px 0;font-size:16px}
+.call > b{display:block;font:600 15px var(--f-head);margin-bottom:4px}
+.call p:last-child,.call ul:last-child{margin-bottom:0}
+.tip{background:var(--amber-soft);border-left:3px solid var(--amber)}
+.err{background:rgba(157,177,194,.08);border-left:3px dashed var(--mist)}
+.chk{background:rgba(157,177,194,.06);border:1px solid var(--line)}
+.chk > b::before{content:"◎ ";color:var(--mist)}
+
+/* Pasos (secuencias reales) */
+ol.steps{list-style:none;padding:0;counter-reset:s}
+ol.steps > li{counter-increment:s;position:relative;padding:0 0 12px 44px;margin:0}
+ol.steps > li::before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;border:1.5px solid var(--amber);color:var(--amber);font:600 14px/27px var(--f-head);text-align:center}
+
+/* Práctica */
+.drill{background:var(--panel);border-radius:12px;padding:16px 18px;margin:24px 0}
+.drill > b{display:block;font:600 17px var(--f-head);margin-bottom:8px}
+.drill label{display:flex;gap:10px;align-items:flex-start;padding:6px 0;cursor:pointer;font-size:16px}
+.drill input{margin-top:5px;accent-color:var(--amber);width:18px;height:18px;flex:none}
+
+/* Tablas */
+.tw{overflow-x:auto;margin:16px 0;border:1px solid var(--line);border-radius:10px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;min-width:520px}
+th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 13.5px var(--f-head);color:var(--mist);background:var(--deep)}
+tr:last-child td{border-bottom:0}
+
+/* Vistas */
+.view{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:14px 0}
+.view h3{margin:0 0 6px}
+.view dl{margin:0;display:grid;grid-template-columns:96px 1fr;gap:3px 10px;font-size:15px}
+.view dt{color:var(--mist)}
+.view dd{margin:0}
+@media (max-width:520px){.view dl{grid-template-columns:1fr}.view dt{margin-top:5px}}
+
+/* Autoevaluación */
+.quiz{margin:30px 0 0}
+.q{border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:14px 0}
+.q > p{font-weight:500;margin-bottom:10px}
+.opt{display:block;width:100%;text-align:left;background:var(--deep);color:var(--bone);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin:6px 0;font:400 15.5px/1.4 var(--f-body);cursor:pointer}
+.opt:hover{border-color:var(--mist)}
+.opt.right{border-color:var(--amber);background:var(--amber-soft)}
+.opt.wrong{opacity:.55;text-decoration:line-through}
+.fb{display:none;font-size:15px;color:var(--bone);margin-top:8px;padding-top:8px;border-top:1px solid var(--line)}
+.q.done .fb{display:block}
+
+/* Navegación inferior */
+.pager{display:flex;gap:10px;margin:40px 0 0;flex-wrap:wrap}
+.pager button{flex:1;min-width:140px;background:var(--deep);border:1px solid var(--line);color:var(--bone);border-radius:10px;padding:12px 14px;font:500 15px var(--f-body);cursor:pointer;text-align:left}
+.pager button small{display:block;color:var(--mist);font-size:12.5px}
+.pager .next{text-align:right}
+.complete{display:block;width:100%;margin:28px 0 0;background:transparent;border:1.5px solid var(--amber);color:var(--amber);border-radius:10px;padding:13px;font:600 16px var(--f-head);cursor:pointer}
+.complete.is-done{background:var(--amber);color:var(--deep)}
+
+/* Portada: el sector */
+.hero{margin:6px 0 10px}
+.hero h1{font-size:clamp(32px,7.5vw,48px);margin-bottom:10px}
+.scope{background:var(--deep);border:1px solid var(--line);border-radius:16px;padding:14px 14px 16px;margin:22px 0 10px}
+.scope svg{display:block;width:100%;height:auto}
+.fr{display:flex;align-items:baseline;gap:10px;margin:2px 4px 10px;flex-wrap:wrap}
+.fr output{font:700 44px/1 var(--f-head);color:var(--amber);font-variant-numeric:tabular-nums}
+.fr span{color:var(--mist);font-size:14px}
+.fr em{font-style:normal;font-size:15px;color:var(--bone);flex-basis:100%}
+.sliders{display:grid;grid-template-columns:1fr 1fr;gap:10px 16px;margin:0 4px}
+@media (max-width:520px){.sliders{grid-template-columns:1fr}}
+.sliders label{font-size:14px;color:var(--mist);display:flex;justify-content:space-between}
+.sliders label b{font:500 14px var(--f-mono);color:var(--bone)}
+.sliders input[type=range]{width:100%;accent-color:var(--amber)}
+.seg{display:flex;gap:6px;margin-top:4px}
+.seg button{flex:1;background:var(--navy);border:1px solid var(--line);color:var(--bone);border-radius:6px;padding:6px 0;font:500 13px var(--f-mono);cursor:pointer}
+.seg button[aria-pressed="true"]{border-color:var(--amber);color:var(--amber)}
+.scope-note{font-size:13.5px;color:var(--mist);margin:12px 4px 0}
+.map{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:8px;margin:14px 0}
+.map a{display:block;border:1px solid var(--line);border-radius:10px;padding:10px 12px;text-decoration:none;color:var(--bone);font-size:15px;line-height:1.3}
+.map a .n{font:500 12.5px var(--f-mono);color:var(--amber);display:block;margin-bottom:2px}
+.map a:hover{border-color:var(--amber)}
+footer{color:var(--mist);font-size:13px;margin-top:48px;border-top:1px solid var(--line);padding-top:14px}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <button class="btn-menu" id="openToc" aria-controls="drawer" aria-expanded="false">Índice</button>
+    <div class="top-title" id="topTitle">Optimización de imagen · Mindray M9<small id="topSub">Portada</small></div>
+  </div>
+  <div class="bar"><span id="bar"></span></div>
+</header>
+
+<div class="drawer" id="drawer" role="dialog" aria-label="Índice del curso">
+  <div class="drawer-bg" id="closeToc"></div>
+  <nav class="drawer-panel">
+    <h2>Índice del curso</h2>
+    <ul class="toc" id="toc"></ul>
+  </nav>
+</div>
+
+<main id="main">
+
+<!-- ============ PORTADA ============ -->
+<section class="mod" id="inicio" data-t="Portada" data-group="Inicio">
+  <div class="hero">
+    <p class="mod-n">Curso práctico · Ecocardiografía</p>
+    <h1>Optimización de imagen en el Mindray M9</h1>
+    <p class="lead">Cada perilla del equipo intercambia una cosa por otra. Este curso te enseña qué intercambia cada una, en qué orden tocarlas y cómo convertirlo en rutina de consulta.</p>
+  </div>
+
+  <div class="scope" aria-label="Simulador de cuadros por segundo">
+    <svg id="fan" viewBox="0 0 320 214" role="img" aria-label="Sector de imagen que cambia con la profundidad y el ángulo"></svg>
+    <div class="fr"><output id="frOut">33</output><span>cuadros/s estimados</span><em id="frZone"></em></div>
+    <div class="sliders">
+      <div><label for="sDepth">Profundidad <b id="vDepth">16 cm</b></label><input type="range" id="sDepth" min="4" max="24" step="1" value="16"></div>
+      <div><label for="sAngle">Ancho de sector <b id="vAngle">90°</b></label><input type="range" id="sAngle" min="30" max="90" step="5" value="90"></div>
+      <div><label>Densidad de líneas <b id="vDens">M</b></label>
+        <div class="seg" id="segDens"><button data-v="1.2">L</button><button data-v="1.6" aria-pressed="true">M</button><button data-v="2.0">H</button><button data-v="2.4">UH</button></div></div>
+      <div><label for="sFoc">Zonas focales <b id="vFoc">1</b></label><input type="range" id="sFoc" min="1" max="4" step="1" value="1"></div>
+    </div>
+    <p class="scope-note">Modelo didáctico de un solo haz por disparo. El M9 forma varios haces de recepción por transmisión, así que la cifra real en pantalla será mayor. Lo que debes retener es la proporción: la mitad de sector o la mitad de profundidad duplica los cuadros; cada zona focal extra los divide.</p>
+  </div>
+
+  <h2>Cómo usar este curso</h2>
+  <p>Son 14 módulos en secuencia y 3 anexos de consulta rápida. Cada módulo tiene la misma estructura: por qué funciona, los controles del M9 implicados, el procedimiento, los errores frecuentes, una práctica para hacer con tus pacientes de la semana y una autoevaluación corta. El módulo 14 organiza todo en un plan de seis semanas.</p>
+
+  <div class="call chk">
+    <b>Decisiones de diseño que tomé</b>
+    <ul>
+      <li><strong>Nombres de controles.</strong> Uso los nombres de la ficha técnica oficial del M9 (Mindray, datasheet v1.0), que coinciden con lo que aparece en el menú en inglés. Tu versión de software puede nombrarlos o ubicarlos distinto, y varias funciones son opcionales: CW, TDI, Free Xros M, TT QA, LVO y eco de estrés.</li>
+      <li><strong>Valores iniciales.</strong> Los números que propongo son puntos de partida para calibrar en tu equipo, no recetas. Las escalas de Mindray son relativas (por ejemplo, el rango dinámico va de 30 a 200) y no equivalen a los dB de otros fabricantes.</li>
+      <li><strong>Umbrales de adquisición.</strong> Nyquist, cuadros por segundo para deformación, tamaño de volumen de muestra y velocidades de barrido siguen las recomendaciones ASE/EACVI.</li>
+      <li><strong>Enfoque clínico.</strong> Agregué un módulo completo sobre el ventrículo derecho en hipertensión pulmonar, porque es tu consulta diaria.</li>
+      <li>Los recuadros <span class="k">◎ Verifica en tu equipo</span> marcan lo que no pude confirmar para tu versión exacta.</li>
+    </ul>
+  </div>
+
+  <h2>Mapa del curso</h2>
+  <div class="map" id="map"></div>
+
+  <footer>Preparado para el Dr. Juan Fernando Carvajal Estupiñán · CardioUDES. Fuentes técnicas: ficha técnica y material de producto Mindray M9; recomendaciones de adquisición ASE/EACVI y guía ESC/ERS 2022 de hipertensión pulmonar. Este material no reemplaza el manual del operador.</footer>
+</section>
+
+<!-- ============ M1 ============ -->
+<section class="mod" id="m1" data-n="01" data-t="La física que gobierna cada ajuste" data-group="Fundamentos">
+  <p class="mod-n">Módulo 01</p>
+  <h1>La física que gobierna cada ajuste</h1>
+  <p class="lead">No necesitas más física de la que ya sabes. Necesitas tenerla organizada alrededor de las perillas: cada control mejora una resolución y empeora otra.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Nombrar la resolución que mejora y la que sacrifica cada control del M9.</li>
+    <li>Estimar mentalmente el efecto de profundidad, sector y focos sobre los cuadros por segundo.</li>
+    <li>Explicar por qué los armónicos limpian la imagen y qué distorsionan.</li>
+  </ul></div>
+
+  <h2>Las cinco resoluciones</h2>
+  <div class="tw"><table>
+    <tr><th>Resolución</th><th>Depende de</th><th>Controles del M9 que la mueven</th></tr>
+    <tr><td>Axial</td><td>Longitud del pulso: frecuencia y ancho de banda</td><td><span class="k">Image Quality</span> (Pen/Gen/Res), armónicos</td></tr>
+    <tr><td>Lateral</td><td>Ancho del haz: foco, apertura, frecuencia, profundidad</td><td><span class="k">Focus Position</span>, <span class="k">Line Density</span>, zoom de escritura, armónicos</td></tr>
+    <tr><td>Elevación</td><td>Grosor del corte (fijo en el transductor sectorial)</td><td>Ninguno. Se compensa cambiando de vista</td></tr>
+    <tr><td>Contraste</td><td>Relación señal/ruido y cómo se mapean los grises</td><td><span class="k">Dynamic Range</span>, <span class="k">Gray Map</span>, <span class="k">iClear</span>, <span class="k">Echo Boost</span>, armónicos</td></tr>
+    <tr><td>Temporal</td><td>Cuadros por segundo</td><td>Profundidad, <span class="k">FOV</span>, <span class="k">Line Density</span>, <span class="k">Focus Number</span>, <span class="k">Persistence</span></td></tr>
+  </table></div>
+
+  <h2>La ecuación que explica el frame rate</h2>
+  <p>El sonido tarda en ir y volver. Con una velocidad de 1540 m/s, la máxima frecuencia de repetición de pulsos para una línea es aproximadamente <strong>77 000 ÷ profundidad en cm</strong>. A 16 cm son unos 4800 pulsos por segundo.</p>
+  <p>Cada cuadro necesita tantos pulsos como líneas tenga, multiplicado por el número de zonas focales:</p>
+  <p class="call tip"><b>Cuadros/s ≈ 77 000 ÷ (profundidad × líneas × zonas focales)</b>Profundidad y sector son proporcionales: si pasas de 18 a 12 cm ganas 50 % de cuadros. Si pasas de 90° a 60° con la misma densidad, ganas otro 50 %. Dos zonas focales cortan los cuadros a la mitad.</p>
+  <p>El M9 usa formación de haces múltiples (varios haces de recepción por cada transmisión), por eso logra más cuadros que este modelo. Pero la proporción se mantiene, y es lo que usas para decidir.</p>
+
+  <h2>Frecuencia contra penetración</h2>
+  <p>La atenuación en tejido blando es de aproximadamente 0,5 dB por cm por MHz, y el sonido recorre la profundidad dos veces. Para ver una aurícula a 16 cm:</p>
+  <ul>
+    <li>a 2,5 MHz pierdes cerca de 40 dB (0,5 × 2,5 × 32)</li>
+    <li>a 3,5 MHz pierdes cerca de 56 dB</li>
+  </ul>
+  <p>Esos 16 dB de diferencia son la razón por la que el campo lejano se llena de ruido cuando eliges <span class="k">Res</span> en un paciente con ventana difícil. La ganancia no lo arregla: amplifica señal y ruido por igual.</p>
+
+  <h2>Qué hacen realmente los armónicos</h2>
+  <p>El tejido distorsiona la onda mientras se propaga y genera energía al doble de la frecuencia emitida. Esa energía armónica nace sobre todo en el centro del haz, donde la presión es mayor, y casi no se genera en los primeros centímetros.</p>
+  <ul>
+    <li><strong>Ganas:</strong> haz más estrecho, menos lóbulos laterales, menos reverberación de la pared torácica y mejor definición endocárdica.</li>
+    <li><strong>Pierdes:</strong> sensibilidad en el campo muy profundo, y las estructuras especulares (valvas, pericardio) se ven más gruesas.</li>
+  </ul>
+  <p>El M9 ofrece <span class="k">THI</span> (armónico tisular) y <span class="k">PSH</span> (Phase Shift Harmonic, la variante propietaria de Mindray que cancela la frecuencia fundamental por manipulación de fase para obtener un armónico más puro).</p>
+
+  <h2>Seguridad: el índice mecánico en pantalla</h2>
+  <p>El M9 muestra el <span class="k">MI</span> y el índice térmico, y permite ajustar la potencia acústica (<span class="k">A. Power</span>) entre 3,2 % y 100 %. Regla de trabajo: sube potencia para mejorar la relación señal/ruido cuando la imagen lo necesita y bájala cuando no. En contraste (módulo 10) el MI deja de ser solo seguridad y se vuelve un parámetro de imagen.</p>
+
+  <div class="call err"><b>Error frecuente</b><p>Pensar que la ganancia y la potencia son intercambiables. La potencia aumenta la señal que regresa; la ganancia solo amplifica lo que ya llegó, incluido el ruido. Si el problema es señal débil, primero frecuencia más baja o armónico de penetración, después potencia y al final ganancia.</p></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> En tres pacientes, anota los cuadros/s que muestra el M9 en apical 4C antes y después de reducir el sector hasta que solo quepa el corazón.</label>
+    <label><input type="checkbox"> En un paciente con buena ventana, compara <span class="k">HRes</span> y <span class="k">HPen</span> en apical 4C y observa dónde aparece el ruido del campo lejano.</label>
+    <label><input type="checkbox"> En paraesternal largo, alterna armónico y fundamental y fíjate en el grosor aparente de las valvas mitrales.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>Adquieres apical 4C a 18 cm con sector de 90° y obtienes pocos cuadros. ¿Qué cambio duplica aproximadamente los cuadros sin perder las aurículas?</p>
+      <button class="opt">Subir a dos zonas focales</button>
+      <button class="opt" data-ok>Reducir el sector a 45° centrado en el corazón</button>
+      <button class="opt">Aumentar la densidad de líneas a UH</button>
+      <div class="fb">Reducir el sector a la mitad reduce a la mitad las líneas y duplica los cuadros. Una zona focal extra los divide y más densidad de líneas los reduce.</div></div>
+    <div class="q"><p>En armónico, las valvas aórticas se ven engrosadas en un paciente joven. ¿Cuál es la explicación más probable?</p>
+      <button class="opt">Esclerosis valvular temprana</button>
+      <button class="opt" data-ok>Efecto conocido del armónico sobre estructuras especulares</button>
+      <button class="opt">Rango dinámico demasiado alto</button>
+      <div class="fb">Los armónicos engruesan en apariencia las estructuras especulares. Antes de describir engrosamiento, compara en fundamental.</div></div>
+  </div>
+</section>
+
+<!-- ============ M2 ============ -->
+<section class="mod" id="m2" data-n="02" data-t="Transductores, presets y QSave" data-group="Fundamentos">
+  <p class="mod-n">Módulo 02</p>
+  <h1>Transductores, presets y QSave</h1>
+  <p class="lead">La mitad de la optimización ocurre antes de poner el transductor en el tórax: en el preset que eliges.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Elegir transductor y banda de frecuencia según el paciente.</li>
+    <li>Construir tu propia familia de presets con <span class="k">QSave</span> sin tocar los de fábrica.</li>
+  </ul></div>
+
+  <h2>Los transductores cardiacos del M9</h2>
+  <div class="tw"><table>
+    <tr><th>Transductor</th><th>Uso</th><th>Datos clave (ficha técnica)</th></tr>
+    <tr><td><span class="k">SP5-1s</span></td><td>Adulto transtorácico</td><td>Monocristal, 1,1–4,4 MHz, 80 elementos, sector máx. 90°. Modo B en tres bandas; armónicos 3,0 / 3,4 / 3,8 MHz; Doppler 2,0–2,5 MHz; TDI 3,0 y 3,8 MHz; CW 2 MHz. Es el que admite LVO.</td></tr>
+    <tr><td><span class="k">P10-4s</span></td><td>Neonatal y pediátrico</td><td>2,9–10,5 MHz, huella de 15 mm, armónicos 7,5–9,0 MHz. Útil también en adultos muy delgados para campo cercano.</td></tr>
+    <tr><td><span class="k">P7-3Ts</span></td><td>Transesofágico</td><td>1,9–8,2 MHz, TDI y CW disponibles.</td></tr>
+    <tr><td><span class="k">CW2s</span></td><td>Doppler continuo sin imagen (lápiz)</td><td>2 MHz, dos elementos. Mejor sensibilidad y huella pequeña para ventanas paraesternal derecha y supraesternal.</td></tr>
+  </table></div>
+
+  <h2>Image Quality: Pen, Gen y Res</h2>
+  <p>En el menú, la frecuencia no aparece en MHz sino como <span class="k">Pen</span> (penetración), <span class="k">Gen</span> (general) y <span class="k">Res</span> (resolución). En armónico se llaman <span class="k">HPen</span>, <span class="k">HGen</span> y <span class="k">HRes</span>. Los modos color y Doppler espectral tienen su propio selector Pen/Gen/Res, independiente del modo B.</p>
+  <div class="call tip"><b>Regla de decisión</b><p>Empieza en <span class="k">HGen</span>. Si el campo lejano (aurículas, ápex en apical) está ruidoso con ganancia correcta, baja a <span class="k">HPen</span>. Si el paciente es delgado y quieres detalle valvular o del ápex, sube a <span class="k">HRes</span>.</p></div>
+
+  <h2>Cómo funcionan los presets en el M9</h2>
+  <p>Al elegir examen y transductor el equipo carga un preset de fábrica. Cualquier ajuste que hagas durante el estudio se pierde al cambiar de examen, salvo que lo guardes con <span class="k">QSave</span>, que ofrece tres acciones:</p>
+  <ul>
+    <li><strong>Save:</strong> sobrescribe el preset actual.</li>
+    <li><strong>Save as:</strong> crea un preset nuevo con tu configuración.</li>
+    <li><strong>Restore:</strong> vuelve a los valores de fábrica.</li>
+  </ul>
+  <div class="call err"><b>Error frecuente</b><p>Usar <strong>Save</strong> sobre el preset de fábrica durante un estudio difícil. El siguiente paciente con buena ventana hereda una imagen sobreganada y con penetración innecesaria. Usa siempre <strong>Save as</strong> con un nombre descriptivo.</p></div>
+
+  <h2>Tu familia de presets</h2>
+  <p>Propongo cinco presets derivados del cardiaco adulto. Los nombres son sugerencia; lo importante es que cada uno resuelva un escenario distinto y que no tengas que reajustar desde cero en cada paciente.</p>
+  <div class="tw"><table>
+    <tr><th>Preset</th><th>Para qué</th><th>Qué cambia respecto al de fábrica</th></tr>
+    <tr><td>Adulto rutina</td><td>Ventana promedio</td><td>HGen, un foco, persistencia baja, iClear moderado, sector y profundidad habituales.</td></tr>
+    <tr><td>Ventana difícil</td><td>Obesidad, EPOC, ventilación mecánica</td><td>HPen, potencia más alta, Echo Boost activo, rango dinámico algo menor, profundidad inicial mayor.</td></tr>
+    <tr><td>VD-HP</td><td>Consulta de hipertensión pulmonar</td><td>Profundidad que incluye la aurícula derecha, sector amplio, escala TDI baja para S', CW preparado para insuficiencia tricuspídea.</td></tr>
+    <tr><td>Valvular Doppler</td><td>Estenosis e insuficiencias</td><td>Nyquist de color en 50–70 cm/s, mapa de varianza disponible, CW con filtro de pared alto y barrido rápido.</td></tr>
+    <tr><td>Deformación</td><td>TT QA, Auto EF, TDI</td><td>Sector estrecho, densidad de líneas media, persistencia 0, iClear y Echo Boost fijos para que los seguimientos sean comparables.</td></tr>
+  </table></div>
+  <div class="call chk"><b>Verifica en tu equipo</b><p>Cuántos presets de usuario admite tu versión, si <span class="k">QSave</span> guarda también los parámetros de color y Doppler, y si puedes respaldar los presets en USB. El manual del operador lo aclara; si me lo compartes, ajusto esta sección.</p></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Anota los valores de fábrica del preset cardiaco adulto (ganancia, rango dinámico, iClear, persistencia, densidad, mapa de grises) antes de modificar nada.</label>
+    <label><input type="checkbox"> Crea "Adulto rutina" con Save as después de optimizar tres pacientes con ventana promedio.</label>
+    <label><input type="checkbox"> Crea "Ventana difícil" con el primer paciente obeso de la semana.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>Terminas un estudio muy optimizado en un paciente obeso. ¿Qué haces con esos ajustes?</p>
+      <button class="opt">Save, para que el preset cardiaco quede mejorado</button>
+      <button class="opt" data-ok>Save as "Ventana difícil"</button>
+      <button class="opt">Nada; se reajusta en cada paciente</button>
+      <div class="fb">Guardarlo como preset separado conserva el de fábrica para ventanas promedio y te ahorra minutos en el siguiente paciente difícil.</div></div>
+  </div>
+</section>
+
+<!-- ============ M3 ============ -->
+<section class="mod" id="m3" data-n="03" data-t="Modo B I: geometría, frecuencia y armónicos" data-group="Modo B">
+  <p class="mod-n">Módulo 03</p>
+  <h1>Modo B I: geometría, frecuencia y armónicos</h1>
+  <p class="lead">Primero decides qué parte del tórax interrogas y con qué haz. Solo después ajustas el brillo.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Encuadrar la estructura con profundidad, sector y foco para ganar resolución y cuadros.</li>
+    <li>Distinguir el zoom de escritura del zoom de lectura y usar el correcto para medir.</li>
+  </ul></div>
+
+  <div class="ctl"><h4>Depth <span>profundidad</span></h4><dl>
+    <dt>Qué hace</dt><dd>Define hasta dónde escucha cada línea. Rango de 1,5 a 40 cm según transductor.</dd>
+    <dt>Súbela cuando</dt><dd>Haces el barrido inicial: en paraesternal largo debe verse la aorta descendente detrás de la aurícula izquierda; buscas derrame pericárdico o pleural.</dd>
+    <dt>Bájala cuando</dt><dd>Ya identificaste la estructura. Objetivo: que ocupe cerca de dos tercios de la pantalla.</dd>
+    <dt>Te cuesta</dt><dd>Más profundidad significa menos cuadros y píxeles más grandes por mm de anatomía.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>FOV <span>ancho del sector</span></h4><dl>
+    <dt>Qué hace</dt><dd>Estrecha o amplía el ángulo del sector (máx. 90° en el SP5-1s).</dd>
+    <dt>Súbelo cuando</dt><dd>Necesitas contexto: apical 4C completo con ambas paredes laterales.</dd>
+    <dt>Bájalo cuando</dt><dd>Estudias una estructura: válvula, una pared para TDI, orejuela, septum interauricular.</dd>
+    <dt>Te cuesta</dt><dd>Nada en calidad; solo pierdes contexto. Es la forma más barata de ganar cuadros.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>Focus Position / Focus Number <span>foco</span></h4><dl>
+    <dt>Qué hace</dt><dd>Estrecha el haz a la profundidad elegida. Hasta 4 zonas focales.</dd>
+    <dt>Ponlo en</dt><dd>La estructura de interés: anillo mitral para función valvular, tercio medio del VI para función global, ápex si buscas trombo o miocardio no compactado.</dd>
+    <dt>Te cuesta</dt><dd>Cada zona focal adicional divide los cuadros. En eco cardiaco usa una sola, salvo estructuras estáticas.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>Line Density <span>densidad de líneas</span></h4><dl>
+    <dt>Qué hace</dt><dd>Número de líneas por grado de sector: L, M, H, UH.</dd>
+    <dt>Súbela cuando</dt><dd>Imagen estática o de detalle fino y los cuadros sobran.</dd>
+    <dt>Bájala cuando</dt><dd>Taquicardia, deformación miocárdica o eco de estrés.</dd>
+    <dt>Te cuesta</dt><dd>Resolución lateral contra cuadros por segundo. <span class="k">M</span> es un buen punto de partida.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>Zoom e iZoom</h4><dl>
+    <dt>Zoom de escritura</dt><dd><strong>Spot zoom</strong>, hasta 10×. Se activa antes de congelar: el equipo concentra todas las líneas en la región elegida. Ganas resolución y cuadros.</dd>
+    <dt>Zoom de lectura</dt><dd><strong>Pan zoom</strong>, 0,8–10×. Solo amplía píxeles ya adquiridos. Útil en revisión, no mejora la información.</dd>
+    <dt>iZoom</dt><dd>Lleva la imagen a pantalla completa en tres pasos. Es de visualización.</dd>
+    <dt>Para medir</dt><dd>Diámetro del TSVI, vena contracta, grosor valvular, orejuela: zoom de escritura siempre.</dd>
+  </dl></div>
+
+  <h2>Frecuencia y armónicos en la práctica</h2>
+  <div class="ctl"><h4>Image Quality <span>HPen / HGen / HRes</span></h4><dl>
+    <dt>Qué hace</dt><dd>Selecciona la banda de frecuencia de transmisión y recepción.</dd>
+    <dt>Regla</dt><dd>La banda más alta que todavía te dé un campo lejano limpio con ganancia normal.</dd>
+  </dl></div>
+  <div class="ctl"><h4>THI / PSH <span>armónico tisular</span></h4><dl>
+    <dt>Úsalo</dt><dd>Por defecto en adultos, sobre todo para bordes endocárdicos, VD y ventanas difíciles.</dd>
+    <dt>Pasa a fundamental</dt><dd>Al juzgar grosor valvular, en niños delgados con transductor de alta frecuencia y cuando dudes si un eco lineal en la aorta es real.</dd>
+    <dt>Compara</dt><dd>THI contra PSH en tu propio equipo: en pacientes difíciles, uno de los dos suele limpiar mejor la cavidad. Quédate con el que te dé mejor endocardio sin engrosar el miocardio.</dd>
+  </dl></div>
+
+  <div class="call chk"><b>Verifica en tu equipo</b><p>La ficha técnica lista <span class="k">iBeam</span> (compuesto espacial), <span class="k">B Steer</span> y <span class="k">ExFOV</span> solo para transductores lineales y convexos. En el SP5-1s no deberían aparecer; son para vascular, pulmón y abdomen. <span class="k">FCI</span> (compuesto de frecuencias) y <span class="k">TSI</span> (optimización por tipo de tejido) figuran como funciones del modo B, pero no está claro si están activos en el preset cardiaco.</p></div>
+
+  <div class="call err"><b>Error frecuente</b><p>Medir el TSVI con zoom de lectura sobre un paraesternal largo a 16 cm. El error de un píxel se eleva al cuadrado en el área y se propaga a todo el cálculo de volumen latido y área valvular.</p></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Mide el TSVI del mismo paciente con zoom de lectura y con zoom de escritura. Compara los valores y el área calculada.</label>
+    <label><input type="checkbox"> En apical 4C, mueve el foco del ápex a las aurículas y observa cómo cambia la nitidez del segmento apical.</label>
+    <label><input type="checkbox"> Durante una semana, anota la profundidad final de tus paraesternales largos. Deberías converger a un valor estable por hábito corporal.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>Buscas un trombo apical en un VI dilatado. ¿Qué configuración es más útil?</p>
+      <button class="opt">Sector de 90°, dos focos, HPen</button>
+      <button class="opt" data-ok>Sector estrecho sobre el ápex, foco en campo cercano, HRes, zoom de escritura</button>
+      <button class="opt">Pan zoom sobre el apical 4C completo</button>
+      <div class="fb">El ápex está en el campo cercano. Una banda alta, foco cercano y zoom de escritura concentran resolución donde está la pregunta clínica.</div></div>
+    <div class="q"><p>¿Cuál zoom mejora los cuadros por segundo?</p>
+      <button class="opt" data-ok>Spot zoom (escritura)</button>
+      <button class="opt">Pan zoom (lectura)</button>
+      <button class="opt">iZoom</button>
+      <div class="fb">El zoom de escritura adquiere solo la región seleccionada, con menos profundidad efectiva y menos líneas.</div></div>
+  </div>
+</section>
+
+<!-- ============ M4 ============ -->
+<section class="mod" id="m4" data-n="04" data-t="Modo B II: brillo, contraste y filtros" data-group="Modo B">
+  <p class="mod-n">Módulo 04</p>
+  <h1>Modo B II: brillo, contraste y filtros</h1>
+  <p class="lead">Con la geometría resuelta, ahora decides cómo se traduce el eco en grises. Aquí es donde más se exagera.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Llevar cualquier imagen a un patrón de referencia: cavidad negra, miocardio gris con textura y pericardio brillante.</li>
+    <li>Usar iClear, Echo Boost y persistencia sin borrar información.</li>
+  </ul></div>
+
+  <div class="call tip"><b>La imagen de referencia</b><p>Sangre casi negra con ruido mínimo. Miocardio gris medio con textura moteada visible. Endocardio definido como transición, no como línea blanca. Pericardio como la estructura más brillante. Valvas delgadas que no dejan estela al moverse.</p></div>
+
+  <div class="ctl"><h4>Gain <span>ganancia global, 0–100</span></h4><dl>
+    <dt>Qué hace</dt><dd>Amplifica toda la señal recibida por igual.</dd>
+    <dt>Ajuste</dt><dd>Sube hasta que aparezca ruido en la cavidad del VI y retrocede apenas.</dd>
+    <dt>Te cuesta</dt><dd>Exceso: bordes gruesos, cavidades más pequeñas, fracción de eyección sobreestimada en trazos. Defecto: pierdes endocardio y trabéculas.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>TGC <span>8 potenciómetros</span></h4><dl>
+    <dt>Qué hace</dt><dd>Compensa la atenuación por profundidad, franja por franja.</dd>
+    <dt>Ajuste</dt><dd>Parte con todos centrados. Corrige solo la franja que se aparta del patrón: habitualmente baja el campo cercano (reverberación de pared) y sube levemente el lejano.</dd>
+    <dt>Evita</dt><dd>Perfiles en serrucho. Generan bandas horizontales que simulan o esconden estructuras.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>LGC <span>ganancia lateral, 4 segmentos</span></h4><dl>
+    <dt>Qué hace</dt><dd>Compensa brillo de izquierda a derecha del sector.</dd>
+    <dt>Úsala cuando</dt><dd>Persiste asimetría lateral después de corregir la angulación: pared lateral del VI o pared libre del VD.</dd>
+    <dt>Ojo</dt><dd>La caída de señal de una pared paralela al haz es un problema de ángulo. Primero mueve el transductor.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>iTouch <span>optimización automática</span></h4><dl>
+    <dt>Qué hace</dt><dd>En modo B ajusta ganancia y TGC en un toque.</dd>
+    <dt>Úsalo</dt><dd>Como punto de partida al cambiar de ventana. Después corrige a mano con el patrón de referencia.</dd>
+    <dt>Ojo</dt><dd>En pacientes con derrame grande o cavidades muy dilatadas, el algoritmo puede sobreganar el tejido.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>Dynamic Range <span>30–200</span></h4><dl>
+    <dt>Qué hace</dt><dd>Cuántos niveles de señal se reparten en la escala de grises.</dd>
+    <dt>Bájalo</dt><dd>Para más contraste: bordes endocárdicos, VD en ventana difícil, eco de estrés.</dd>
+    <dt>Súbelo</dt><dd>Para textura: masas, trombos, miocardio con infiltración, grosor de pericardio.</dd>
+    <dt>Te cuesta</dt><dd>Muy bajo: imagen dura en blanco y negro, pierdes interfaces sutiles. Muy alto: imagen lavada.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>Gray Map / Tint Map</h4><dl>
+    <dt>Qué hace</dt><dd>Curvas de posprocesamiento que asignan grises (8 mapas) o colorización (8 mapas).</dd>
+    <dt>Decisión</dt><dd>Elige un mapa de grises y no lo cambies entre estudios del mismo paciente. La comparación seriada depende de eso. La colorización es preferencia personal; si la usas, que sea siempre la misma.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>Persistence <span>0–7</span></h4><dl>
+    <dt>Qué hace</dt><dd>Promedia cuadros sucesivos para suavizar ruido.</dd>
+    <dt>En eco cardiaco</dt><dd><span class="k">0–1</span>. Más persistencia deja estela en valvas, borra la velocidad de apertura y degrada el seguimiento de textura para deformación.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>iClear <span>supresión de moteado, Off y 1–7</span></h4><dl>
+    <dt>Qué hace</dt><dd>Reduce el patrón moteado y realza bordes continuos.</dd>
+    <dt>Punto de partida</dt><dd>Nivel bajo a moderado (2–4) para rutina.</dd>
+    <dt>Bájalo o apágalo</dt><dd>Al evaluar estructuras pequeñas y móviles: vegetaciones, cuerdas rotas, filamentos, trombos pequeños. Niveles altos dan una imagen de apariencia plástica que puede borrarlas.</dd>
+    <dt>Ventaja</dt><dd>Según la ficha técnica es ajustable sobre datos crudos: puedes comparar con y sin iClear en la revisión.</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>Echo Boost <span>solo en exámenes cardiacos</span></h4><dl>
+    <dt>Qué hace</dt><dd>Procesamiento adaptativo que realza ecos débiles y suprime ruido en cavidades para homogeneizar el brillo en todo el sector y separar las capas del miocardio.</dd>
+    <dt>Úsalo</dt><dd>En ventanas difíciles, cavidades con ruido de fondo y pared lateral o anterior tenue.</dd>
+    <dt>Decisión</dt><dd>Evalúalo encendido y apagado en cinco pacientes consecutivos. Si mejora sin inventar bordes, déjalo en tu preset "Ventana difícil".</dd>
+  </dl></div>
+
+  <div class="ctl"><h4>A. Power <span>potencia acústica, 3,2–100 %</span></h4><dl>
+    <dt>Qué hace</dt><dd>Energía transmitida. Mejora la relación señal/ruido real.</dd>
+    <dt>Regla</dt><dd>La mínima que permita un campo lejano limpio. Observa el MI en pantalla.</dd>
+  </dl></div>
+
+  <h2>Orden de ajuste del brillo</h2>
+  <ol class="steps">
+    <li><strong>Señal:</strong> banda de frecuencia y potencia.</li>
+    <li><strong>Amplificación:</strong> iTouch como punto de partida, luego ganancia global.</li>
+    <li><strong>Compensación:</strong> TGC por profundidad y LGC lateral.</li>
+    <li><strong>Presentación:</strong> rango dinámico y mapa de grises.</li>
+    <li><strong>Filtros:</strong> iClear, Echo Boost y persistencia, al final y con moderación.</li>
+  </ol>
+
+  <div class="call err"><b>Error frecuente</b><p>Subir la ganancia para "rescatar" una ventana mala. Con más ganancia el endocardio se ve, pero engrosado, y la cavidad se achica. El remedio es cambiar la posición del paciente, el espacio intercostal o la banda de frecuencia.</p></div>
+  <div class="call err"><b>Error frecuente</b><p>Interpretar como "brillo granular" del miocardio lo que es armónico con ganancia alta y rango dinámico bajo. Ese aspecto es inespecífico y muy dependiente del ajuste.</p></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Guarda el mismo apical 4C con iClear apagado, en 3 y en 6. Revísalos lado a lado.</label>
+    <label><input type="checkbox"> En tres pacientes, ajusta primero con iTouch y luego a mano. Anota qué potenciómetros de TGC corriges casi siempre.</label>
+    <label><input type="checkbox"> En un paciente con ventana difícil, compara Echo Boost encendido y apagado en apical 4C.</label>
+    <label><input type="checkbox"> Traza la FEVI con ganancia alta y con ganancia correcta en el mismo clip, usando el ajuste de ganancia sobre datos crudos.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>Evalúas una posible vegetación de 3 mm muy móvil. ¿Qué ajuste revisas primero?</p>
+      <button class="opt">Subir persistencia para ver mejor el contorno</button>
+      <button class="opt" data-ok>Bajar o apagar iClear y dejar persistencia en 0</button>
+      <button class="opt">Subir rango dinámico al máximo</button>
+      <div class="fb">La supresión de moteado y el promedio temporal pueden borrar estructuras pequeñas y móviles.</div></div>
+    <div class="q"><p>La pared lateral del VI en apical 4C se ve tenue. ¿Qué haces primero?</p>
+      <button class="opt">Subir LGC del lado lateral</button>
+      <button class="opt" data-ok>Angular el transductor para que el haz no quede paralelo a la pared</button>
+      <button class="opt">Subir ganancia global</button>
+      <div class="fb">Una pared paralela al haz refleja poco por el ángulo de incidencia. La angulación corrige la causa; LGC solo compensa el brillo residual.</div></div>
+  </div>
+</section>
+
+<!-- ============ M5 ============ -->
+<section class="mod" id="m5" data-n="05" data-t="El protocolo de optimización por ventanas" data-group="Modo B">
+  <p class="mod-n">Módulo 05</p>
+  <h1>El protocolo de optimización por ventanas</h1>
+  <p class="lead">Una secuencia fija de diez pasos que se vuelve automática. Luego, lo específico de cada vista.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Optimizar cualquier ventana en menos de 90 segundos siguiendo siempre el mismo orden.</li>
+    <li>Saber qué ajuste cambia entre paraesternal, apical, subcostal y supraesternal.</li>
+  </ul></div>
+
+  <h2>Los diez pasos</h2>
+  <ol class="steps">
+    <li><strong>Preset correcto</strong> para el paciente (rutina, ventana difícil, VD-HP).</li>
+    <li><strong>Paciente y respiración:</strong> decúbito lateral izquierdo con brazo izquierdo sobre la cabeza para paraesternal y apical; decúbito supino con piernas flexionadas para subcostal. Apnea breve en espiración para apical; inspiración para subcostal.</li>
+    <li><strong>ECG conectado</strong> con buena onda R. Sin ECG no hay clips por ciclos ni TT QA.</li>
+    <li><strong>Profundidad</strong> de reconocimiento, luego reducida hasta que la estructura ocupe dos tercios.</li>
+    <li><strong>Sector</strong> ajustado a la anatomía que necesitas.</li>
+    <li><strong>Foco</strong> en la estructura de interés, una sola zona.</li>
+    <li><strong>Banda de frecuencia y armónico</strong>: HGen y corrige según el campo lejano.</li>
+    <li><strong>Brillo:</strong> iTouch, ganancia, TGC y LGC.</li>
+    <li><strong>Contraste y filtros:</strong> rango dinámico, iClear, Echo Boost, persistencia.</li>
+    <li><strong>Verifica los cuadros por segundo</strong> en pantalla y guarda el clip.</li>
+  </ol>
+  <div class="call tip"><b>Por qué este orden</b><p>Cada paso cambia las condiciones del siguiente. Si ajustas la ganancia antes de fijar la profundidad y la banda, tendrás que volver a ajustarla.</p></div>
+
+  <h2>Ajustes por vista</h2>
+  <div class="view"><h3>Paraesternal eje largo</h3><dl>
+    <dt>Objetivo</dt><dd>Diámetros lineales del VI, TSVI, raíz aórtica, válvula mitral.</dd>
+    <dt>Profundidad</dt><dd>Primero con aorta descendente visible (derrame pericárdico frente a pleural). Luego reduce hasta la pared posterior.</dd>
+    <dt>Foco</dt><dd>A nivel de la válvula mitral o del TSVI según la medición.</dd>
+    <dt>Específico</dt><dd>Zoom de escritura para TSVI y raíz aórtica. Ajusta el eje hasta que septum y pared posterior queden horizontales y paralelos.</dd>
+    <dt>Error típico</dt><dd>Corte oblicuo que sobrestima diámetros; el ápex del VI "sube" hacia la izquierda de la pantalla.</dd>
+  </dl></div>
+  <div class="view"><h3>Paraesternal eje corto</h3><dl>
+    <dt>Objetivo</dt><dd>Válvula aórtica, válvula pulmonar y TSVD, mitral, músculos papilares, ápex.</dd>
+    <dt>Profundidad</dt><dd>Menor que en eje largo; la estructura al centro.</dd>
+    <dt>Específico</dt><dd>VI circular a nivel papilar (si es ovalado, el corte es oblicuo). Para la válvula pulmonar, sector estrecho y foco en el anillo pulmonar.</dd>
+    <dt>Error típico</dt><dd>Juzgar aplanamiento septal en un corte oblicuo.</dd>
+  </dl></div>
+  <div class="view"><h3>Apical 4 cámaras</h3><dl>
+    <dt>Objetivo</dt><dd>Función global y regional del VI, volúmenes, aurículas, VD.</dd>
+    <dt>Profundidad</dt><dd>Incluye completas las dos aurículas.</dd>
+    <dt>Foco</dt><dd>Tercio medio del VI para función; anillo mitral para Doppler y válvula.</dd>
+    <dt>Específico</dt><dd>Busca el ápex verdadero: cavidad del VI larga y ápex delgado que no se mueve hacia el centro. Bajar un espacio intercostal suele resolver el acortamiento.</dd>
+    <dt>Error típico</dt><dd>Acortamiento del VI: subestima volúmenes y oculta alteraciones apicales.</dd>
+  </dl></div>
+  <div class="view"><h3>Apical 2 y 3 cámaras</h3><dl>
+    <dt>Objetivo</dt><dd>Simpson biplano, paredes inferior, anterior, inferolateral y anteroseptal.</dd>
+    <dt>Específico</dt><dd>Rota desde 4C sin mover el ápex. Mantén profundidad y foco para que los volúmenes sean comparables.</dd>
+    <dt>Error típico</dt><dd>La pared anterior cae fuera de ventana: prueba LGC después de ajustar la angulación.</dd>
+  </dl></div>
+  <div class="view"><h3>Subcostal</h3><dl>
+    <dt>Objetivo</dt><dd>Septum interauricular, derrame pericárdico, VD en pacientes sin ventana apical, vena cava inferior.</dd>
+    <dt>Profundidad</dt><dd>Mayor: el corazón está lejos. Considera HPen.</dd>
+    <dt>Específico</dt><dd>Para el septum interauricular, el haz queda perpendicular: es la mejor vista para descartar falsos defectos por caída de señal.</dd>
+  </dl></div>
+  <div class="view"><h3>Supraesternal</h3><dl>
+    <dt>Objetivo</dt><dd>Arco aórtico, coartación, flujo diastólico retrógrado en aorta descendente.</dd>
+    <dt>Específico</dt><dd>Cuello extendido con almohada bajo los hombros. Sector estrecho, profundidad moderada. El CW2s cabe mejor en esta ventana.</dd>
+  </dl></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Durante una semana, aplica los diez pasos en cada paciente. Mide con reloj el tiempo en tres de ellos.</label>
+    <label><input type="checkbox"> Guarda pares antes/después del paso 8 en apical 4C y revísalos al final del día.</label>
+    <label><input type="checkbox"> En cada apical 4C, verifica el ápex verdadero antes de guardar.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>En apical 4C el ápex del VI se contrae hacia el centro de la cavidad y la longitud del VI es corta. ¿Qué corriges?</p>
+      <button class="opt">Subir la profundidad</button>
+      <button class="opt" data-ok>Mover el transductor más lateral e inferior hasta alargar la cavidad</button>
+      <button class="opt">Subir LGC en el ápex</button>
+      <div class="fb">Es un corte acortado. Se corrige con la posición del transductor, no con controles.</div></div>
+  </div>
+</section>
+
+<!-- ============ M6 ============ -->
+<section class="mod" id="m6" data-n="06" data-t="Modo M, Free Xros M y modo M color" data-group="Doppler y modos">
+  <p class="mod-n">Módulo 06</p>
+  <h1>Modo M, Free Xros M y modo M color</h1>
+  <p class="lead">El modo M convencional sigue siendo el rey de la resolución temporal. El modo M anatómico corrige el ángulo, pero hereda los cuadros del 2D.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Elegir entre modo M convencional y Free Xros M según alineación y resolución temporal.</li>
+    <li>Adquirir un modo M color válido para velocidad de propagación.</li>
+  </ul></div>
+
+  <h2>Modo M convencional</h2>
+  <div class="ctl"><h4>Speed <span>6 niveles</span></h4><dl>
+    <dt>Qué hace</dt><dd>Velocidad de barrido.</dd>
+    <dt>Regla</dt><dd>Rápida para medir tiempos y distancias en uno o dos ciclos; lenta para ver variación respiratoria.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Gain, Dynamic Range (30–180), M Soften (0–4), Edge Enhance (0–3)</h4><dl>
+    <dt>Qué hacen</dt><dd>Brillo, contraste, suavizado y realce de bordes del trazo.</dd>
+    <dt>Regla</dt><dd>Ganancia algo menor que en 2D para que los bordes queden como líneas finas. Realce de bordes bajo o moderado; alto engruesa interfaces.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Formato de pantalla <span>V2:3, V3:2, H2:3, V3:1, Full</span></h4><dl>
+    <dt>Decisión</dt><dd>Un formato que dé más espacio al trazo que al 2D cuando mides. Guárdalo en tu preset.</dd>
+  </dl></div>
+
+  <h2>Free Xros M: modo M anatómico</h2>
+  <p>Coloca hasta tres líneas de muestreo en cualquier dirección sobre el 2D, incluso sin pasar por el vértice del sector.</p>
+  <div class="call tip"><b>La regla que casi nadie aplica</b><p>El trazo de Free Xros M se reconstruye a partir de los cuadros del 2D, así que su resolución temporal es la del 2D. Antes de usarlo, sube los cuadros por segundo: sector estrecho, profundidad justa y densidad media.</p></div>
+  <ul>
+    <li><strong>TAPSE</strong> cuando el anillo tricuspídeo no se alinea con el haz convencional.</li>
+    <li><strong>Vena cava inferior</strong> para variación respiratoria, en subcostal.</li>
+    <li><strong>Movimiento septal</strong> en bloqueo de rama o sobrecarga del VD, con dos líneas simultáneas.</li>
+  </ul>
+  <div class="call chk"><b>Verifica en tu equipo</b><p>Free Xros M es opcional. <span class="k">Free Xros CM</span> (modo M anatómico curvo) solo funciona dentro de TDI y sirve para seguir el movimiento a lo largo de una pared completa.</p></div>
+
+  <h2>Modo M color</h2>
+  <p>Disponible con transductores sectoriales. Para velocidad de propagación del flujo mitral (Vp):</p>
+  <ol class="steps">
+    <li>Apical 4C con haz alineado al flujo de entrada mitral, desde el anillo hasta el ápex.</li>
+    <li>ROI de color estrecha sobre la línea del modo M.</li>
+    <li>Desplaza la línea de base del color hacia abajo para que el primer aliasing se vea claramente como frontera.</li>
+    <li>Barrido rápido y mide la pendiente del primer contorno de aliasing en los primeros 4 cm.</li>
+  </ol>
+
+  <div class="call err"><b>Error frecuente</b><p>Medir TAPSE con Free Xros M a 25 cuadros por segundo. El pico de desplazamiento se pierde entre cuadros y el valor sale subestimado.</p></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Mide TAPSE en el mismo paciente con modo M convencional y con Free Xros M a baja y alta velocidad de cuadros.</label>
+    <label><input type="checkbox"> Configura el formato de pantalla del modo M que prefieres y guárdalo en el preset.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>¿De qué depende la resolución temporal del trazo en Free Xros M?</p>
+      <button class="opt">De la velocidad de barrido elegida</button>
+      <button class="opt" data-ok>De los cuadros por segundo del 2D</button>
+      <button class="opt">Del número de líneas activas</button>
+      <div class="fb">Es una reconstrucción a partir de los cuadros 2D. Más cuadros, trazo más fiel.</div></div>
+  </div>
+</section>
+
+<!-- ============ M7 ============ -->
+<section class="mod" id="m7" data-n="07" data-t="Doppler color" data-group="Doppler y modos">
+  <p class="mod-n">Módulo 07</p>
+  <h1>Doppler color</h1>
+  <p class="lead">El tamaño de un jet en color es tanto una propiedad del ajuste como del paciente. Estandarizar es la mitad del diagnóstico.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Ajustar ROI, escala, ganancia y filtros del color en el M9 con un orden fijo.</li>
+    <li>Configurar color para regurgitaciones, PISA y flujos de baja velocidad.</li>
+  </ul></div>
+
+  <h2>Orden de ajuste</h2>
+  <ol class="steps">
+    <li>Optimiza primero el 2D. El color no rescata una mala vista.</li>
+    <li>ROI de color lo más pequeña posible: ancho y profundidad justos para la estructura y el origen del jet.</li>
+    <li>Escala (Nyquist) según la pregunta.</li>
+    <li>Ganancia: sube hasta ver ruido de color en el tejido y retrocede.</li>
+    <li>Filtro de pared, estado de flujo y prioridad.</li>
+    <li>Verifica los cuadros por segundo del color.</li>
+  </ol>
+
+  <h2>Controles</h2>
+  <div class="ctl"><h4>ROI <span>tamaño y posición de la caja</span></h4><dl>
+    <dt>Te cuesta</dt><dd>Cada grado de ancho y cada centímetro de profundidad de la caja restan cuadros. Una caja que empieza en el transductor cuando el jet está a 12 cm desperdicia la mitad del tiempo.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Scale / PRF <span>escala, 30 niveles; baseline</span></h4><dl>
+    <dt>Regurgitaciones</dt><dd>Nyquist de 50–70 cm/s para evaluar tamaño del jet y vena contracta.</dd>
+    <dt>PISA</dt><dd>Desplaza la línea de base en la dirección del flujo hasta un aliasing de unos 30–40 cm/s y una semiesfera clara.</dd>
+    <dt>Flujos lentos</dt><dd>Venas pulmonares, cortocircuitos de baja velocidad, flujo en el ápex: escala baja, sabiendo que aparecerá aliasing en flujos normales.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Gain <span>0–100</span></h4><dl>
+    <dt>Regla</dt><dd>Justo por debajo del umbral en que aparece ruido de color sobre el miocardio.</dd>
+    <dt>Te cuesta</dt><dd>Alta: jets agrandados y color que invade tejido. Baja: jets pequeños y excéntricos invisibles.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Wall Filter <span>0–7</span></h4><dl>
+    <dt>Qué hace</dt><dd>Elimina señales de baja velocidad (movimiento de paredes).</dd>
+    <dt>Regla</dt><dd>Alto para jets de alta velocidad con artefactos de pared; bajo para flujos lentos.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Flow State <span>L / M / H</span></h4><dl>
+    <dt>Qué hace</dt><dd>Adapta el procesamiento al rango de velocidades esperado.</dd>
+    <dt>Regla</dt><dd><span class="k">H</span> para jets valvulares; <span class="k">L</span> para venas pulmonares, septum interauricular y flujo apical.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Packet Size <span>0–3</span></h4><dl>
+    <dt>Qué hace</dt><dd>Pulsos por línea de color.</dd>
+    <dt>Te cuesta</dt><dd>Más paquete, más sensibilidad y menos cuadros. En eco cardiaco usa valores bajos o medios.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Priority <span>0–100 %</span></h4><dl>
+    <dt>Qué hace</dt><dd>Umbral de brillo del 2D por encima del cual el equipo muestra tejido en lugar de color.</dd>
+    <dt>Regla</dt><dd>Si el color "pinta" encima de valvas y paredes, baja la prioridad. Si el color desaparece cerca de ecos brillantes (prótesis, calcio), súbela.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Smooth, Persistence, Line Density</h4><dl>
+    <dt>Regla</dt><dd>Suavizado bajo para no redondear jets. Persistencia baja (0–1): alta prolonga visualmente el jet en el ciclo. Densidad media.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Color Map e Invert</h4><dl>
+    <dt>Qué hace</dt><dd>Mapas de velocidad (V0–V10) y de varianza (VV0–VV9), que agregan verde o amarillo a la turbulencia.</dd>
+    <dt>Decisión</dt><dd>Mapa de velocidad para PISA y medición; varianza para localizar el origen de jets turbulentos. No actives <span class="k">Invert</span> salvo razón explícita y documentada en el informe.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Image Quality <span>Pen / Gen / Res en color</span></h4><dl>
+    <dt>Regla</dt><dd><span class="k">Pen</span> en ventana difícil o jets profundos (insuficiencia mitral desde apical en paciente obeso); <span class="k">Res</span> en campo cercano.</dd>
+  </dl></div>
+  <div class="ctl"><h4>HR Flow, HDR Flow y Dual Live</h4><dl>
+    <dt>HR Flow</dt><dd>Color de alta resolución: mejor definición de bordes del flujo. Útil para vena contracta y cortocircuitos pequeños.</dd>
+    <dt>HDR Flow</dt><dd>Color con alto rango dinámico: muestra en la misma imagen flujos lentos y rápidos.</dd>
+    <dt>Dual Live</dt><dd>Muestra a la vez el 2D solo y el 2D con color. Útil para relacionar un jet con la anatomía (perforación, dehiscencia, vegetación).</dd>
+  </dl></div>
+  <div class="ctl"><h4>B/C Align y Velocity Tag</h4><dl>
+    <dt>B/C Align</dt><dd>Iguala el ancho del sector 2D al de la caja de color para ganar cuadros.</dd>
+    <dt>Velocity Tag</dt><dd>Resalta un rango de velocidades elegido. Útil para visualizar una isovelocidad concreta.</dd>
+  </dl></div>
+  <div class="call chk"><b>Verifica en tu equipo</b><p>La ficha técnica describe HR Flow y HDR Flow como funciones estándar, pero no detalla en qué presets aparecen ni si pueden combinarse. Pruébalos en tu preset valvular y define con cuál te quedas.</p></div>
+
+  <div class="call err"><b>Error frecuente</b><p>Graduar una insuficiencia mitral por área del jet con Nyquist en 35 cm/s. El jet puede duplicar su tamaño aparente. Mantén 50–70 cm/s y prioriza vena contracta, PISA y parámetros integrados.</p></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> En una insuficiencia mitral, guarda el mismo jet con Nyquist de 35, 55 y 70 cm/s.</label>
+    <label><input type="checkbox"> Ajusta la caja de color al mínimo en tres estudios y anota cuántos cuadros ganas.</label>
+    <label><input type="checkbox"> Construye una PISA desplazando la línea de base y mide el radio con zoom de escritura.</label>
+    <label><input type="checkbox"> Evalúa el septum interauricular desde subcostal con escala baja y estado de flujo L.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>Un jet de insuficiencia aórtica se ve enorme y con color sobre la valva anterior mitral. ¿Qué dos ajustes revisas?</p>
+      <button class="opt">Subir persistencia y paquete</button>
+      <button class="opt" data-ok>Bajar ganancia de color y prioridad</button>
+      <button class="opt">Subir filtro de pared al máximo y cambiar a mapa de varianza</button>
+      <div class="fb">Ganancia alta agranda el jet; prioridad alta deja que el color se pinte sobre tejido brillante.</div></div>
+    <div class="q"><p>¿Para qué desplazas la línea de base del color al medir PISA?</p>
+      <button class="opt">Para eliminar el aliasing</button>
+      <button class="opt" data-ok>Para bajar la velocidad de aliasing en la dirección del flujo y agrandar la semiesfera medible</button>
+      <button class="opt">Para mejorar los cuadros por segundo</button>
+      <div class="fb">Un radio mayor reduce el error relativo de medición del radio, que entra al cuadrado en el cálculo.</div></div>
+  </div>
+</section>
+
+<!-- ============ M8 ============ -->
+<section class="mod" id="m8" data-n="08" data-t="Doppler espectral PW y CW" data-group="Doppler y modos">
+  <p class="mod-n">Módulo 08</p>
+  <h1>Doppler espectral PW y CW</h1>
+  <p class="lead">Un espectro bien adquirido tiene envolvente completa, ocupa la pantalla y se mide en su borde denso. Todo lo demás es ajuste al servicio de eso.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Configurar volumen de muestra, escala, línea de base, filtro, barrido y resolución tiempo/frecuencia para cada flujo.</li>
+    <li>Reconocer y evitar la sobreestimación por ganancia excesiva.</li>
+  </ul></div>
+
+  <h2>Principios</h2>
+  <ul>
+    <li><strong>Alineación:</strong> ángulo entre haz y flujo menor de 20°. En eco cardiaco no uses corrección de ángulo: deja <span class="k">Angle</span> en 0° y corrige alineando el transductor, con ayuda del color.</li>
+    <li><strong>Audio:</strong> el sonido más agudo y limpio suele marcar la mejor alineación, antes de que el espectro lo muestre.</li>
+    <li><strong>Congela el 2D:</strong> en dúplex o tríplex el equipo reparte tiempo entre modos. Para la mejor calidad espectral, deja el 2D en actualización y adquiere el espectro solo.</li>
+  </ul>
+
+  <h2>Controles</h2>
+  <div class="ctl"><h4>SV <span>volumen de muestra PW, 0,5–20 mm</span></h4><dl>
+    <dt>Regla</dt><dd>Pequeño para localizar (flujo mitral, TSVI, venas pulmonares); grande para señales débiles o tisulares.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Scale y Baseline <span>escala; línea de base −4 a +4</span></h4><dl>
+    <dt>Regla</dt><dd>La señal debe ocupar cerca de dos tercios de la escala. Desplaza la línea de base antes de subir escala cuando el flujo es unidireccional.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Gain y Dynamic Range <span>0–100; 24–72</span></h4><dl>
+    <dt>Regla</dt><dd>Ganancia hasta que la envolvente se vea completa con fondo casi negro. Rango dinámico medio-bajo para bordes nítidos.</dd>
+    <dt>Te cuesta</dt><dd>Ganancia alta crea "plumas" por encima del borde real y sobreestima velocidades, sobre todo en CW.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Wall Filter <span>0–6</span></h4><dl>
+    <dt>Regla</dt><dd>Bajo para flujos lentos (venas pulmonares, flujo mitral, TDI). Alto para CW de alta velocidad (estenosis aórtica, insuficiencia tricuspídea).</dd>
+    <dt>Te cuesta</dt><dd>Alto en flujos lentos borra el inicio y el final de las ondas y altera los tiempos.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Sweep Speed <span>6 niveles</span></h4><dl>
+    <dt>Regla</dt><dd>Rápido (equivalente a 50–100 mm/s) para función diastólica, TDI y tiempos. Lento (unos 25 mm/s) para variación respiratoria en taponamiento o constricción.</dd>
+  </dl></div>
+  <div class="ctl"><h4>T/F Res <span>resolución tiempo/frecuencia, 0–4</span></h4><dl>
+    <dt>Qué hace</dt><dd>Intercambia definición temporal del espectro por definición de velocidades.</dd>
+    <dt>Regla</dt><dd>Hacia tiempo para eventos rápidos (tiempos de aceleración, TDI); hacia frecuencia para picos de velocidad nítidos.</dd>
+  </dl></div>
+  <div class="ctl"><h4>HPRF <span>PW de alta frecuencia de repetición</span></h4><dl>
+    <dt>Qué hace</dt><dd>Aumenta la velocidad máxima medible en PW colocando volúmenes adicionales en el trayecto.</dd>
+    <dt>Te cuesta</dt><dd>Ambigüedad de profundidad: la velocidad puede venir de cualquiera de los volúmenes. Úsalo sabiendo dónde están.</dd>
+  </dl></div>
+  <div class="ctl"><h4>iTouch en Doppler</h4><dl>
+    <dt>Qué hace</dt><dd>Ajusta automáticamente ganancia, escala, PRF y filtro de pared, y línea de base.</dd>
+    <dt>Úsalo</dt><dd>Para encontrar rápidamente la señal; después verifica escala y ganancia a mano.</dd>
+  </dl></div>
+  <div class="ctl"><h4>Auto Calc <span>trazo automático</span></h4><dl>
+    <dt>Ajustes</dt><dd>Número de ciclos (1–5), área de trazo (arriba, abajo o todo), sensibilidad (0–5) y suavizado (0–4).</dd>
+    <dt>Regla</dt><dd>Revisa siempre el trazo. Si sigue las plumas, baja ganancia antes que la sensibilidad.</dd>
+  </dl></div>
+
+  <h2>Referencia por flujo</h2>
+  <div class="tw"><table>
+    <tr><th>Flujo</th><th>Vista y posición</th><th>Ajustes</th></tr>
+    <tr><td>Flujo mitral</td><td>Apical 4C, SV en la punta de las valvas</td><td>SV 1–3 mm, filtro bajo, barrido rápido</td></tr>
+    <tr><td>Venas pulmonares</td><td>Apical 4C, SV 1–2 cm dentro de la vena pulmonar superior derecha, guiado por color de escala baja</td><td>SV 3–5 mm, filtro bajo, ganancia algo mayor</td></tr>
+    <tr><td>TSVI</td><td>Apical 5C o 3C, justo proximal a la zona de aceleración</td><td>SV 3–5 mm, espectro de bordes finos y velocidad pico nítida</td></tr>
+    <tr><td>Estenosis aórtica</td><td>Apical, paraesternal derecha, supraesternal y subcostal</td><td>CW, filtro alto, escala amplia. Usa el CW2s en al menos una ventana adicional</td></tr>
+    <tr><td>Insuficiencia tricuspídea</td><td>Varias ventanas (ver módulo 12)</td><td>CW, envolvente completa, sin sobreganancia</td></tr>
+    <tr><td>Flujo pulmonar</td><td>Paraesternal eje corto, SV centrado justo proximal a la válvula</td><td>PW, SV pequeño, barrido rápido para tiempo de aceleración</td></tr>
+  </table></div>
+
+  <div class="call err"><b>Error frecuente</b><p>Medir la velocidad máxima de una estenosis aórtica en las plumas de un espectro sobreganado. Mide en el borde denso de la envolvente, y confirma el valor en varias ventanas.</p></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> En tres flujos mitrales, compara filtro de pared bajo y alto y observa la onda A y los tiempos.</label>
+    <label><input type="checkbox"> En tu próxima estenosis aórtica, usa el CW2s en paraesternal derecha y compara con la mejor apical.</label>
+    <label><input type="checkbox"> Mide la misma velocidad de insuficiencia tricuspídea con ganancia correcta y con ganancia alta; anota la diferencia en mmHg.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>El flujo de venas pulmonares pierde la onda Ar. ¿Qué ajuste revisas primero?</p>
+      <button class="opt">Subir filtro de pared</button>
+      <button class="opt" data-ok>Bajar filtro de pared y verificar la posición del SV dentro de la vena</button>
+      <button class="opt">Subir la escala al máximo</button>
+      <div class="fb">La onda Ar es de baja velocidad y corta duración; un filtro alto la elimina.</div></div>
+    <div class="q"><p>En Doppler cardiaco, ¿qué haces con la corrección de ángulo?</p>
+      <button class="opt">La ajustas al ángulo que ves en el 2D</button>
+      <button class="opt" data-ok>La dejas en 0° y alineas el transductor</button>
+      <button class="opt">Usas Quick Angle de 60°</button>
+      <div class="fb">El flujo intracardiaco es tridimensional y su dirección real no se ve en el plano. Corregir el ángulo introduce errores grandes.</div></div>
+  </div>
+</section>
+
+<!-- ============ M9 ============ -->
+<section class="mod" id="m9" data-n="09" data-t="Doppler tisular: TVI, TVD, TVM y TEI" data-group="Doppler y modos">
+  <p class="mod-n">Módulo 09</p>
+  <h1>Doppler tisular: TVI, TVD, TVM y TEI</h1>
+  <p class="lead">El miocardio se mueve lento y refleja fuerte. El Doppler tisular invierte la lógica del Doppler de flujo: escala baja, ganancia baja y filtro bajo.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Adquirir e' septal y lateral y S' tricuspídea con espectros limpios.</li>
+    <li>Preparar un clip de TDI color apto para análisis cuantitativo.</li>
+  </ul></div>
+
+  <h2>Los cuatro modos del paquete TDI</h2>
+  <div class="tw"><table>
+    <tr><th>Modo</th><th>Qué es</th><th>Uso principal</th></tr>
+    <tr><td><span class="k">TVI</span></td><td>Velocidad tisular en color sobre el 2D</td><td>Análisis offline de velocidades, deformación por TDI, sincronía</td></tr>
+    <tr><td><span class="k">TVD</span></td><td>Doppler tisular pulsado (espectral)</td><td>e', a', S' mitral y tricuspídea</td></tr>
+    <tr><td><span class="k">TVM</span></td><td>Modo M con color tisular</td><td>Cronología de movimiento de una pared</td></tr>
+    <tr><td><span class="k">TEI</span></td><td>Energía tisular</td><td>Visualización de amplitud; uso limitado en práctica clínica</td></tr>
+  </table></div>
+
+  <h2>TVD: Doppler tisular pulsado</h2>
+  <ol class="steps">
+    <li>Apical 4C con la pared a estudiar lo más paralela posible al haz. Estrecha el sector hacia esa pared.</li>
+    <li>SV de 5–10 mm en el anillo o hasta 1 cm dentro del miocardio basal, que no se salga en sístole.</li>
+    <li>Escala baja, cerca de ±20 cm/s, para que la señal ocupe la pantalla.</li>
+    <li>Ganancia baja y rango dinámico medio: la señal tisular es intensa y se satura.</li>
+    <li>Filtro de pared bajo y barrido rápido.</li>
+    <li>Guarda al menos tres ciclos; en fibrilación auricular, más.</li>
+  </ol>
+
+  <h2>TVI color para análisis</h2>
+  <ul>
+    <li>Cuadros por segundo altos: apunta a más de 100. Sector estrecho de una sola pared y ROI de color justo sobre ella.</li>
+    <li>ECG conectado, apnea, tres ciclos.</li>
+    <li>Escala ajustada para evitar aliasing tisular; persistencia y suavizado bajos.</li>
+    <li>El análisis se hace con <span class="k">TDI QA</span>: velocidad, deformación y tasa de deformación, con seguimiento de la región de interés.</li>
+  </ul>
+
+  <div class="call err"><b>Error frecuente</b><p>Tomar e' lateral con la pared inclinada 30° respecto al haz. El coseno de 30° es 0,87: subestimas 13 % y el cociente E/e' sube artificialmente.</p></div>
+  <div class="call err"><b>Error frecuente</b><p>Saturar el espectro de TVD con ganancia alta. El pico se ensancha y se mide más alto de lo real.</p></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Configura en tu preset una escala TVD baja y filtro bajo para no reajustar cada vez.</label>
+    <label><input type="checkbox"> Mide e' lateral con el sector centrado y con el sector desplazado hacia la pared lateral. Compara valores.</label>
+    <label><input type="checkbox"> Adquiere un clip TVI de la pared septal con más de 100 cuadros por segundo.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>El espectro de S' tricuspídea se ve grueso y brillante con picos altos. ¿Qué ajustas?</p>
+      <button class="opt">Subir filtro de pared</button>
+      <button class="opt" data-ok>Bajar ganancia y verificar escala</button>
+      <button class="opt">Aumentar el SV a 20 mm</button>
+      <div class="fb">La señal tisular es de alta amplitud y se satura con facilidad.</div></div>
+  </div>
+</section>
+
+<!-- ============ M10 ============ -->
+<section class="mod" id="m10" data-n="10" data-t="Deformación, Auto EF, contraste y estrés" data-group="Avanzado y clínica">
+  <p class="mod-n">Módulo 10</p>
+  <h1>Deformación, Auto EF, contraste y estrés</h1>
+  <p class="lead">Los algoritmos no corrigen la adquisición. Cada función avanzada del M9 tiene requisitos de imagen que conviene conocer antes de apretar el botón.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Adquirir clips aptos para TT QA y Auto EF.</li>
+    <li>Configurar opacificación del VI y solución salina agitada.</li>
+  </ul></div>
+
+  <h2>TT QA: seguimiento de textura</h2>
+  <p>El análisis de deformación del M9 trabaja sobre las vistas apical eje largo, 4C y 2C, y eje corto basal, medio y apical. Según la ficha técnica, <strong>requiere ECG conectado antes de adquirir</strong>.</p>
+  <ol class="steps">
+    <li>Preset "Deformación": persistencia 0, iClear y Echo Boost en valores fijos que no cambiarás entre controles del mismo paciente.</li>
+    <li>Cuadros por segundo entre 40 y 80 (idealmente cerca de 60). En taquicardia, más: estrecha el sector.</li>
+    <li>Sin acortamiento: ápex verdadero, VI lo más largo posible.</li>
+    <li>Endocardio y epicardio visibles en todos los segmentos durante todo el ciclo. Un segmento fuera de sector invalida su curva.</li>
+    <li>Apnea y al menos tres ciclos con ritmo regular.</li>
+    <li>Mismo equipo y misma versión de software para seguimientos, por la variabilidad entre fabricantes.</li>
+  </ol>
+  <div class="call chk"><b>Verifica en tu equipo</b><p>La ficha técnica v1.0 solo lista vistas del VI para TT QA. Si tu versión incluye análisis del VD o de la aurícula, tendrá requisitos de vista propios. Tampoco está documentado cómo interactúan iClear o Echo Boost con el seguimiento; por eso la regla es mantenerlos constantes.</p></div>
+
+  <h2>Auto EF</h2>
+  <p>Reconoce automáticamente los cuadros de diástole y sístole y calcula volúmenes por Simpson. Su exactitud depende casi por completo del apical 4C y 2C:</p>
+  <ul>
+    <li>Sin acortamiento y con el mismo eje longitudinal en ambas vistas.</li>
+    <li>Endocardio visible en todos los segmentos; ganancia correcta (la sobreganancia achica cavidades).</li>
+    <li>Revisa los cuadros elegidos como fin de diástole y fin de sístole y corrige el trazo antes de aceptar.</li>
+  </ul>
+
+  <h2>Opacificación del VI (LVO)</h2>
+  <p>Disponible con el SP5-1s. Útil cuando dos o más segmentos contiguos no se visualizan, para trombo apical, miocardio no compactado y eco de estrés.</p>
+  <ol class="steps">
+    <li>Entra al modo LVO: el equipo baja el índice mecánico. Trabaja con MI bajo (en general por debajo de 0,3).</li>
+    <li>Foco a nivel del anillo mitral, para no destruir microburbujas en el ápex.</li>
+    <li>Ganancia ajustada después de que el contraste llegue, no antes.</li>
+    <li>Infusión lenta o bolos pequeños con lavado lento.</li>
+  </ol>
+  <div class="tw"><table>
+    <tr><th>Lo que ves</th><th>Causa probable</th><th>Corrección</th></tr>
+    <tr><td>Remolino en el ápex</td><td>Destrucción de burbujas por MI alto o poca concentración</td><td>Baja MI, foco más profundo, más contraste</td></tr>
+    <tr><td>Sombra en segmentos basales y aurícula</td><td>Exceso de contraste que atenúa</td><td>Espera o reduce velocidad de infusión</td></tr>
+    <tr><td>Cavidad opacificada pero bordes difusos</td><td>Ganancia alta</td><td>Baja ganancia</td></tr>
+  </table></div>
+  <div class="call chk"><b>Verifica en tu equipo</b><p>La disponibilidad del agente de contraste depende de la aprobación regulatoria y de tu institución. La ficha técnica menciona funciones de destrucción de burbujas para el modo de contraste abdominal; confirma cuáles están activas en LVO.</p></div>
+
+  <h2>Solución salina agitada</h2>
+  <p>No necesita modo de contraste: se adquiere en modo B cardiaco.</p>
+  <ul>
+    <li>Apical 4C o subcostal con ambas aurículas y el septum interauricular bien definidos.</li>
+    <li>Ganancia algo menor que la habitual para que la aurícula derecha opacificada no se sature y puedas ver burbujas aisladas en la izquierda.</li>
+    <li>Adquisición prospectiva larga por ciclos: el M9 permite hasta 390 ciclos o 480 s. Programa suficientes ciclos para cubrir la maniobra de Valsalva y varios latidos posteriores.</li>
+    <li>Para realzar la insuficiencia tricuspídea en CW: mide la envolvente densa, no las espigas brillantes que producen las burbujas.</li>
+  </ul>
+
+  <h2>Eco de estrés</h2>
+  <ul>
+    <li>Adquisición disparada por la onda R: el ECG debe tener buena R en todas las etapas.</li>
+    <li>Misma profundidad, sector y foco en reposo y en esfuerzo para que las comparaciones lado a lado sean válidas.</li>
+    <li>Con frecuencias cardiacas altas, sector estrecho y densidad media para mantener cuadros.</li>
+    <li>El M9 permite LVO dentro del protocolo de estrés.</li>
+  </ul>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Adquiere tres clips apicales en el preset "Deformación" y corre TT QA. Anota qué segmentos rechaza el seguimiento y por qué.</label>
+    <label><input type="checkbox"> Compara Auto EF contra tu Simpson manual en cinco pacientes.</label>
+    <label><input type="checkbox"> Programa la adquisición prospectiva por ciclos para tu próximo estudio con solución salina.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>En un apical 4C con contraste ves remolino de burbujas en el ápex. ¿Qué haces?</p>
+      <button class="opt">Subes la ganancia</button>
+      <button class="opt" data-ok>Bajas el MI y llevas el foco al anillo mitral</button>
+      <button class="opt">Subes la persistencia</button>
+      <div class="fb">El remolino apical indica destrucción de microburbujas en el campo cercano.</div></div>
+    <div class="q"><p>¿Qué rango de cuadros por segundo buscas para seguimiento de textura con frecuencia cardiaca normal?</p>
+      <button class="opt">15–25</button>
+      <button class="opt" data-ok>40–80</button>
+      <button class="opt">Más de 200</button>
+      <div class="fb">Muy pocos cuadros pierden el pico de deformación; demasiados, con menor densidad de líneas, degradan la textura que se sigue.</div></div>
+  </div>
+</section>
+
+<!-- ============ M11 ============ -->
+<section class="mod" id="m11" data-n="11" data-t="Artefactos: reconocerlos y corregirlos" data-group="Avanzado y clínica">
+  <p class="mod-n">Módulo 11</p>
+  <h1>Artefactos: reconocerlos y corregirlos</h1>
+  <p class="lead">Un artefacto que se corrige con un control es un artefacto de ajuste. Uno que persiste al cambiar de ventana puede ser anatomía.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Identificar los artefactos más frecuentes en eco cardiaco y el control o maniobra que los resuelve.</li>
+    <li>Aplicar la prueba de dos ventanas antes de reportar una estructura dudosa.</li>
+  </ul></div>
+
+  <div class="tw"><table>
+    <tr><th>Artefacto</th><th>Cómo se ve</th><th>Qué lo corrige</th><th>Qué no lo corrige</th></tr>
+    <tr><td>Reverberación de campo cercano</td><td>Neblina o bandas en el ápex en apical</td><td>Armónico, TGC cercana más baja, otro espacio intercostal, HRes con foco cercano para confirmar</td><td>Ganancia global</td></tr>
+    <tr><td>Lóbulo lateral o haz lateral</td><td>Líneas curvas en aorta o aurícula izquierda que siguen a una estructura brillante</td><td>Armónico, bajar ganancia, otra ventana</td><td>Rango dinámico</td></tr>
+    <tr><td>Grosor de corte</td><td>Ecos dentro de cavidades o de la aorta por estructuras vecinas</td><td>Vista ortogonal</td><td>Ningún control; es fijo en el transductor</td></tr>
+    <tr><td>Sombra acústica</td><td>Zona sin eco detrás de prótesis o calcio</td><td>Ventana alternativa, transesofágico</td><td>Potencia o ganancia</td></tr>
+    <tr><td>Refracción</td><td>Estructura duplicada lateralmente (válvula aórtica en eje corto)</td><td>Cambiar la ventana o el ángulo</td><td>Filtros</td></tr>
+    <tr><td>Caída de señal lateral</td><td>Pared lateral o septum interauricular "ausente"</td><td>Angulación, vista con haz perpendicular (subcostal para el septum)</td><td>LGC por sí sola</td></tr>
+    <tr><td>Aliasing</td><td>Velocidad cortada o envuelta</td><td>Línea de base, escala, CW</td><td>Ganancia</td></tr>
+    <tr><td>Imagen en espejo espectral</td><td>Señal simétrica a ambos lados de la línea de base</td><td>Bajar ganancia y potencia Doppler, mejorar alineación</td><td>Filtro de pared</td></tr>
+    <tr><td>Ambigüedad de profundidad</td><td>Velocidad en PW que no corresponde al sitio</td><td>Salir de HPRF, confirmar con color</td><td>Tamaño de SV</td></tr>
+    <tr><td>Desbordamiento de color</td><td>Color sobre valvas o paredes</td><td>Bajar ganancia de color y prioridad</td><td>Escala</td></tr>
+    <tr><td>Destellos de color</td><td>Color en tejido con cada latido o respiración</td><td>Subir filtro de pared, apnea</td><td>Mapa de color</td></tr>
+    <tr><td>Estela temporal</td><td>Valvas que dejan rastro al moverse</td><td>Persistencia a 0</td><td>iClear</td></tr>
+  </table></div>
+
+  <h2>La prueba de dos ventanas</h2>
+  <p>Antes de reportar un trombo apical, un colgajo aórtico o una masa auricular:</p>
+  <ol class="steps">
+    <li>Verifica que la estructura se mueve con la anatomía y no con el transductor.</li>
+    <li>Confírmala en una segunda ventana con un haz de dirección distinta.</li>
+    <li>Cambia banda de frecuencia, armónico y foco; un artefacto suele cambiar de forma.</li>
+    <li>Si sigue la duda en el ápex, usa color con escala baja: el flujo que llena el ápex descarta una masa ocupante, y la opacificación del VI resuelve casi todos los casos.</li>
+  </ol>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Guarda un ejemplo real de cada uno de cinco artefactos de la tabla y arma tu propia galería.</label>
+    <label><input type="checkbox"> En tu siguiente ápex dudoso, aplica los cuatro pasos y registra cuál lo resolvió.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>Ves una línea en la aorta ascendente en paraesternal largo que se mueve paralela a la pared posterior de la aorta. ¿Qué haces primero?</p>
+      <button class="opt">Reportar posible disección</button>
+      <button class="opt" data-ok>Cambiar ángulo y ventana, bajar ganancia y verificar con armónico y color</button>
+      <button class="opt">Subir el rango dinámico</button>
+      <div class="fb">Un eco lineal que imita el movimiento de otra estructura es sugestivo de reverberación o lóbulo lateral. Hay que confirmarlo en otra ventana y, si persiste, completar el estudio.</div></div>
+  </div>
+</section>
+
+<!-- ============ M12 ============ -->
+<section class="mod" id="m12" data-n="12" data-t="El ventrículo derecho en hipertensión pulmonar" data-group="Avanzado y clínica">
+  <p class="mod-n">Módulo 12</p>
+  <h1>El ventrículo derecho en hipertensión pulmonar</h1>
+  <p class="lead">Tu ecoscopia dirigida al VD en consulta vive o muere por la adquisición. Este módulo reúne todo lo anterior aplicado a cada medida.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Configurar el preset "VD-HP" y un protocolo iWorks que siga el orden de tu registro.</li>
+    <li>Reconocer el ajuste que más distorsiona cada medida del VD.</li>
+  </ul></div>
+
+  <h2>Apical 4C enfocada al VD</h2>
+  <ul>
+    <li>Desde el apical 4C estándar, desplaza el transductor lateralmente hasta que el ápex del VI quede en el centro superior del sector y el diámetro basal del VD sea máximo, sin acortarlo.</li>
+    <li>Profundidad que incluya la aurícula derecha completa. Sector amplio para ver la pared libre.</li>
+    <li>Foco en el tercio medio del VD para área y cambio de área fraccional; en el anillo tricuspídeo para TAPSE y S'.</li>
+    <li>La pared libre suele quedar en el borde del sector y paralela al haz: corrige angulación primero y después ajusta LGC y TGC.</li>
+    <li>Armónico con rango dinámico algo bajo para separar trabéculas y banda moderadora del borde endocárdico.</li>
+  </ul>
+
+  <h2>Cada medida y su trampa de adquisición</h2>
+  <div class="tw"><table>
+    <tr><th>Medida</th><th>Adquisición correcta</th><th>Trampa principal</th><th>Referencia ESC/ERS 2022</th></tr>
+    <tr><td>Velocidad de IT</td><td>CW en varias ventanas: entrada del VD paraesternal, eje corto, apical enfocada, subcostal. Alinea con color. Envolvente completa</td><td>Envolvente incompleta subestima; sobreganancia sobreestima. En IT masiva con espectro triangular de pico precoz, Bernoulli pierde validez</td><td>&gt; 2,8 m/s sugiere HP</td></tr>
+    <tr><td>TAPSE</td><td>Modo M convencional alineado con el movimiento del anillo lateral; si no se alinea, Free Xros M con cuadros altos</td><td>Free Xros M con pocos cuadros subestima</td><td>Cociente TAPSE/PAPS &lt; 0,55 mm/mmHg</td></tr>
+    <tr><td>S' tricuspídea</td><td>TVD en anillo lateral, SV 5–10 mm, escala baja, ganancia baja</td><td>Pared inclinada respecto al haz; espectro saturado</td><td>Parámetro de función del VD</td></tr>
+    <tr><td>Relación VD/VI basal</td><td>Apical enfocada al VD, fin de diástole, sin acortamiento</td><td>Vista no enfocada subestima el VD</td><td>&gt; 1,0</td></tr>
+    <tr><td>Índice de excentricidad del VI</td><td>Eje corto a nivel papilar, VI circular, zoom de escritura, sístole y diástole</td><td>Corte oblicuo simula aplanamiento</td><td>&gt; 1,1 en sístole y/o diástole</td></tr>
+    <tr><td>Tiempo de aceleración pulmonar</td><td>PW en eje corto, SV pequeño centrado justo proximal a la válvula, barrido rápido, T/F Res hacia tiempo</td><td>SV en la pared o dentro de la válvula; barrido lento</td><td>&lt; 105 ms y/o muesca mesosistólica</td></tr>
+    <tr><td>Área de aurícula derecha</td><td>Apical enfocada al VD, fin de sístole, profundidad completa</td><td>Aurícula cortada por profundidad insuficiente</td><td>&gt; 18 cm²</td></tr>
+    <tr><td>Vena cava inferior</td><td>Subcostal, 1–2 cm de la desembocadura en la AD; Free Xros M para variación respiratoria</td><td>Corte tangencial de la vena subestima diámetro</td><td>&gt; 21 mm con colapso inspiratorio disminuido</td></tr>
+    <tr><td>Arteria pulmonar</td><td>Eje corto de grandes vasos, zoom de escritura</td><td>Medir en zoom de lectura</td><td>&gt; 25 mm, o mayor que la raíz aórtica</td></tr>
+  </table></div>
+  <div class="call tip"><b>Solución salina para la IT débil</b><p>Si la envolvente de IT es incompleta en todas las ventanas, la solución salina agitada realza el espectro. Baja la ganancia después de la inyección y mide el borde denso, no las espigas de burbujas.</p></div>
+
+  <h2>Protocolo iWorks para tu ecoscopia VD</h2>
+  <p>iWorks permite crear plantillas por pasos con modo, anotación, marca corporal y medición preasignados. Propongo este orden, que puedes alinear con los campos de tu herramienta de dictado para que dictes en la misma secuencia en que adquieres:</p>
+  <ol class="steps">
+    <li><strong>B:</strong> paraesternal largo. Derrame, TSVD proximal.</li>
+    <li><strong>B:</strong> eje corto papilar. Índice de excentricidad.</li>
+    <li><strong>B + Color:</strong> eje corto de grandes vasos. Diámetro de arteria pulmonar.</li>
+    <li><strong>B + PW:</strong> tracto de salida del VD. Tiempo de aceleración y muesca.</li>
+    <li><strong>B + Color + CW:</strong> entrada del VD paraesternal. Velocidad de IT.</li>
+    <li><strong>B:</strong> apical enfocada al VD. Diámetro basal, relación VD/VI, área de AD.</li>
+    <li><strong>B + M:</strong> apical enfocada al VD. TAPSE.</li>
+    <li><strong>B:</strong> apical enfocada al VD con TDI activado manualmente. S'.</li>
+    <li><strong>B + Color + CW:</strong> apical enfocada al VD. Velocidad de IT.</li>
+    <li><strong>B + M:</strong> subcostal. Vena cava inferior.</li>
+  </ol>
+  <div class="call chk"><b>Verifica en tu equipo</b><p>La ficha técnica lista estos modos para iWorks: B, Dual, B+Color, B+PW, B+Color+PW, B+CW, B+Color+CW y B+M. El Doppler tisular no aparece como modo de paso, por eso el paso 8 requiere activarlo a mano. iWorks es opcional.</p></div>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Crea el preset "VD-HP" con la profundidad, escala TDI y CW que usas habitualmente.</label>
+    <label><input type="checkbox"> Construye la plantilla iWorks y úsala en cinco pacientes seguidos. Ajusta el orden según tu flujo real.</label>
+    <label><input type="checkbox"> En cada paciente, busca la velocidad de IT en al menos tres ventanas y anota cuál dio el máximo.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>Un paciente con HP tiene IT masiva con espectro triangular y pico muy precoz. ¿Qué interpretación es correcta?</p>
+      <button class="opt">La velocidad pico representa fielmente la presión sistólica pulmonar</button>
+      <button class="opt" data-ok>La ecuación de Bernoulli pierde validez y la presión puede estar subestimada</button>
+      <button class="opt">Hay que subir la ganancia para completar el espectro</button>
+      <div class="fb">Con coaptación ausente la aurícula y el ventrículo se igualan rápidamente; el gradiente no refleja la presión real.</div></div>
+    <div class="q"><p>¿Por qué el TAPSE con Free Xros M exige cuadros altos?</p>
+      <button class="opt">Porque la línea anatómica es más corta</button>
+      <button class="opt" data-ok>Porque el trazo se reconstruye con los cuadros del 2D</button>
+      <button class="opt">Porque la ganancia es más baja</button>
+      <div class="fb">Con pocos cuadros, el máximo desplazamiento puede caer entre dos cuadros y se pierde.</div></div>
+  </div>
+</section>
+
+<!-- ============ M13 ============ -->
+<section class="mod" id="m13" data-n="13" data-t="Posprocesado, clips y archivo" data-group="Avanzado y clínica">
+  <p class="mod-n">Módulo 13</p>
+  <h1>Posprocesado, clips y archivo</h1>
+  <p class="lead">Algunos errores se rescatan en la revisión y otros no. Saber cuáles define qué no puedes dejar para después.</p>
+  <div class="goals"><p>Al terminar podrás</p><ul>
+    <li>Distinguir los parámetros que el M9 permite modificar sobre datos crudos de los que quedan fijos al adquirir.</li>
+    <li>Configurar la duración de clips y el formato de archivo.</li>
+  </ul></div>
+
+  <h2>Qué se rescata y qué no</h2>
+  <div class="tw"><table>
+    <tr><th>Modo</th><th>Ajustable en revisión (según ficha técnica)</th><th>Fijo al adquirir</th></tr>
+    <tr><td>B</td><td>Ganancia, TGC, LGC, rango dinámico, mapa de grises y de color, iClear, zoom, volteo y rotación</td><td>Profundidad, sector, foco, banda de frecuencia, armónico, densidad de líneas, persistencia, potencia</td></tr>
+    <tr><td>M</td><td>Velocidad, ganancia, rango dinámico, mapas, realce de bordes</td><td>Posición de la línea en modo M convencional</td></tr>
+    <tr><td>Color</td><td>Ganancia, línea de base, inversión, suavizado, mapa, prioridad, marca de velocidad</td><td>Escala/PRF, tamaño de caja, paquete, estado de flujo</td></tr>
+    <tr><td>PW/CW</td><td>Línea de base, filtro de pared, velocidad de barrido, ángulo, inversión, audio, T/F Res, rango dinámico, mapas</td><td>Posición y tamaño del SV, escala/PRF, alineación</td></tr>
+  </table></div>
+  <div class="call tip"><b>Consecuencia práctica</b><p>Durante el estudio prioriza lo que queda fijo: geometría, banda, escala y alineación. La ganancia y el contraste puedes afinarlos al medir.</p></div>
+  <div class="call chk"><b>Verifica en tu equipo</b><p>El procesamiento sobre datos crudos funciona sobre imágenes guardadas en el formato propio del sistema (FRM para imágenes y CIN para clips). Una exportación en JPG, AVI o DICOM no conserva esa posibilidad. Confirma en el manual si tu configuración de guardado lo mantiene.</p></div>
+
+  <h2>Clips</h2>
+  <ul>
+    <li><strong>Retrospectivo:</strong> guarda lo que ya pasó, 1–120 s o 1–120 ciclos. Úsalo por ciclos con ECG: dos o tres en ritmo sinusal y más en fibrilación auricular.</li>
+    <li><strong>Prospectivo:</strong> graba hacia adelante, hasta 480 s o 390 ciclos. Úsalo para solución salina, maniobras y respiración.</li>
+    <li><strong>Área de guardado:</strong> imagen, estándar o pantalla completa. Guardar con los parámetros visibles permite auditar después con qué ajuste se adquirió cada clip.</li>
+  </ul>
+
+  <h2>Flujo de trabajo</h2>
+  <ul>
+    <li><span class="k">iStation</span> gestiona pacientes y estudios, permite continuar estudios y medir sobre archivados.</li>
+    <li><span class="k">iWorks</span> estandariza el orden y reduce omisiones.</li>
+    <li>DICOM y reporte estructurado cardiaco son opcionales; si están activos, las medidas viajan a PACS sin transcribir.</li>
+  </ul>
+
+  <div class="drill"><b>Práctica en consulta</b>
+    <label><input type="checkbox"> Configura el guardado retrospectivo por ciclos con ECG.</label>
+    <label><input type="checkbox"> Toma un clip ligeramente sobreganado y corrígelo en revisión. Luego intenta corregir uno con profundidad excesiva y comprueba que no se puede.</label>
+  </div>
+
+  <div class="quiz">
+    <div class="q"><p>¿Cuál de estos errores puedes corregir después de guardar el clip?</p>
+      <button class="opt">Nyquist de color demasiado bajo</button>
+      <button class="opt" data-ok>Ganancia de color demasiado alta</button>
+      <button class="opt">Caja de color demasiado grande</button>
+      <div class="fb">Según la ficha técnica, la ganancia de color es ajustable sobre datos crudos; la escala y el tamaño de la caja no.</div></div>
+  </div>
+</section>
+
+<!-- ============ M14 ============ -->
+<section class="mod" id="m14" data-n="14" data-t="Plan de práctica de seis semanas" data-group="Práctica">
+  <p class="mod-n">Módulo 14</p>
+  <h1>Plan de práctica de seis semanas</h1>
+  <p class="lead">La experticia en optimización es un hábito medible. Este plan convierte el curso en rutina sin alargar tus consultas.</p>
+
+  <h2>Calendario</h2>
+  <div class="tw"><table>
+    <tr><th>Semana</th><th>Módulos</th><th>Objetivo en consulta</th></tr>
+    <tr><td>1</td><td>01–02</td><td>Registrar valores de fábrica y crear "Adulto rutina" y "Ventana difícil"</td></tr>
+    <tr><td>2</td><td>03–05</td><td>Los diez pasos en cada paciente; pares antes/después en apical 4C</td></tr>
+    <tr><td>3</td><td>06–07</td><td>Free Xros M con cuadros altos; color estandarizado a 50–70 cm/s; cajas mínimas</td></tr>
+    <tr><td>4</td><td>08–09</td><td>Filtros y escalas espectrales por flujo; preset TDI; CW2s en estenosis aórtica</td></tr>
+    <tr><td>5</td><td>10–11</td><td>Preset "Deformación", TT QA y Auto EF contra Simpson manual; galería de artefactos</td></tr>
+    <tr><td>6</td><td>12–13</td><td>Preset "VD-HP" y plantilla iWorks; auditoría final y examen</td></tr>
+  </table></div>
+
+  <h2>Rutina de cinco minutos por día</h2>
+  <ol class="steps">
+    <li>Elige un paciente con ventana promedio y uno difícil.</li>
+    <li>En cada uno, aplica el ajuste del día (el de la semana en curso).</li>
+    <li>Guarda el par antes/después en la misma vista.</li>
+    <li>Al final de la jornada, revísalos lado a lado y anota en una línea qué cambió.</li>
+  </ol>
+
+  <h2>Rúbrica de autoauditoría</h2>
+  <p>Cada viernes, puntúa diez estudios de la semana. Cada criterio vale 0 (inadecuado), 1 (aceptable) o 2 (óptimo). La meta al final de la semana 6 es un promedio de 14 o más sobre 16.</p>
+  <div class="tw"><table>
+    <tr><th>Criterio</th><th>Óptimo (2 puntos)</th></tr>
+    <tr><td>Encuadre</td><td>Profundidad y sector ajustados; la estructura ocupa dos tercios</td></tr>
+    <tr><td>Eje</td><td>Sin acortamiento; eje corto circular; paraesternal con paredes horizontales</td></tr>
+    <tr><td>Brillo</td><td>Cavidad negra, miocardio con textura, sin bandas de TGC</td></tr>
+    <tr><td>Endocardio</td><td>Visible en todos los segmentos durante el ciclo</td></tr>
+    <tr><td>Cuadros por segundo</td><td>Adecuados para el propósito (rutina, deformación, TDI)</td></tr>
+    <tr><td>Color</td><td>Caja mínima, Nyquist estandarizado, sin desbordamiento</td></tr>
+    <tr><td>Doppler espectral</td><td>Alineado, escala a dos tercios, envolvente completa sin plumas</td></tr>
+    <tr><td>Clip</td><td>ECG con buena R, ciclos suficientes, parámetros visibles</td></tr>
+  </table></div>
+
+  <div class="drill"><b>Seguimiento semanal</b>
+    <label><input type="checkbox"> Semana 1 completada</label>
+    <label><input type="checkbox"> Semana 2 completada</label>
+    <label><input type="checkbox"> Semana 3 completada</label>
+    <label><input type="checkbox"> Semana 4 completada</label>
+    <label><input type="checkbox"> Semana 5 completada</label>
+    <label><input type="checkbox"> Semana 6 completada y examen final aprobado</label>
+  </div>
+</section>
+
+<!-- ============ ANEXO A ============ -->
+<section class="mod" id="aa" data-n="A" data-t="Tabla maestra de controles" data-group="Anexos">
+  <p class="mod-n">Anexo A</p>
+  <h1>Tabla maestra de controles</h1>
+  <p class="lead">Qué ganas, qué pierdes y si puedes corregirlo después.</p>
+  <div class="tw"><table>
+    <tr><th>Control</th><th>Mejora</th><th>Sacrifica</th><th>En revisión</th></tr>
+    <tr><td><span class="k">Depth</span></td><td>Contexto anatómico</td><td>Cuadros, tamaño de la estructura</td><td>No</td></tr>
+    <tr><td><span class="k">FOV</span></td><td>Cuadros (al estrecharlo)</td><td>Contexto</td><td>No</td></tr>
+    <tr><td><span class="k">Focus Position</span></td><td>Resolución lateral en la zona</td><td>Nada si hay una zona</td><td>No</td></tr>
+    <tr><td><span class="k">Focus Number</span></td><td>Uniformidad lateral</td><td>Cuadros (divide)</td><td>No</td></tr>
+    <tr><td><span class="k">Line Density</span></td><td>Resolución lateral</td><td>Cuadros</td><td>No</td></tr>
+    <tr><td><span class="k">Image Quality</span></td><td>Res: detalle; Pen: penetración</td><td>La otra</td><td>No</td></tr>
+    <tr><td><span class="k">THI / PSH</span></td><td>Endocardio, menos ruido</td><td>Grosor valvular aparente</td><td>No</td></tr>
+    <tr><td><span class="k">A. Power</span></td><td>Señal/ruido real</td><td>Exposición acústica</td><td>No</td></tr>
+    <tr><td><span class="k">Gain</span></td><td>Brillo global</td><td>Ruido, bordes gruesos</td><td>Sí</td></tr>
+    <tr><td><span class="k">TGC</span></td><td>Uniformidad en profundidad</td><td>Bandas si se ajusta mal</td><td>Sí</td></tr>
+    <tr><td><span class="k">LGC</span></td><td>Uniformidad lateral</td><td>Oculta problemas de ángulo</td><td>Sí</td></tr>
+    <tr><td><span class="k">iTouch</span></td><td>Rapidez</td><td>Precisión en casos atípicos</td><td>Brillo sí</td></tr>
+    <tr><td><span class="k">Dynamic Range</span></td><td>Bajo: contraste; alto: textura</td><td>El opuesto</td><td>Sí</td></tr>
+    <tr><td><span class="k">Gray Map</span></td><td>Presentación</td><td>Comparabilidad si cambia</td><td>Sí</td></tr>
+    <tr><td><span class="k">Persistence</span></td><td>Suavidad</td><td>Resolución temporal</td><td>No</td></tr>
+    <tr><td><span class="k">iClear</span></td><td>Bordes limpios</td><td>Estructuras finas y móviles</td><td>Sí</td></tr>
+    <tr><td><span class="k">Echo Boost</span></td><td>Homogeneidad, ruido en cavidades</td><td>Por evaluar en tu práctica</td><td>Verificar</td></tr>
+    <tr><td><span class="k">Spot zoom</span></td><td>Resolución y cuadros</td><td>Contexto</td><td>No</td></tr>
+    <tr><td><span class="k">Color Scale</span></td><td>Evita aliasing (alta); sensibilidad (baja)</td><td>El opuesto</td><td>No</td></tr>
+    <tr><td><span class="k">Color Gain</span></td><td>Sensibilidad</td><td>Jets agrandados</td><td>Sí</td></tr>
+    <tr><td><span class="k">Packet Size</span></td><td>Sensibilidad de color</td><td>Cuadros</td><td>No</td></tr>
+    <tr><td><span class="k">Priority</span></td><td>Color sobre tejido</td><td>Desbordamiento</td><td>Sí</td></tr>
+    <tr><td><span class="k">Wall Filter PW</span></td><td>Limpia artefacto de pared</td><td>Flujos lentos</td><td>Sí</td></tr>
+    <tr><td><span class="k">T/F Res</span></td><td>Tiempo o velocidad</td><td>El opuesto</td><td>Sí</td></tr>
+    <tr><td><span class="k">HPRF</span></td><td>Velocidad máxima en PW</td><td>Localización</td><td>No</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ ANEXO B ============ -->
+<section class="mod" id="ab" data-n="B" data-t="Tarjeta de bolsillo" data-group="Anexos">
+  <p class="mod-n">Anexo B</p>
+  <h1>Tarjeta de bolsillo</h1>
+  <p class="lead">Los números que conviene tener memorizados.</p>
+  <div class="tw"><table>
+    <tr><th>Situación</th><th>Valor de trabajo</th></tr>
+    <tr><td>Cuadros/s, rutina 2D</td><td>30 o más</td></tr>
+    <tr><td>Cuadros/s, seguimiento de textura</td><td>40–80, idealmente cerca de 60</td></tr>
+    <tr><td>Cuadros/s, TVI color</td><td>Más de 100</td></tr>
+    <tr><td>Nyquist, jets regurgitantes</td><td>50–70 cm/s</td></tr>
+    <tr><td>Aliasing para PISA</td><td>30–40 cm/s con línea de base desplazada</td></tr>
+    <tr><td>SV flujo mitral</td><td>1–3 mm en la punta de las valvas</td></tr>
+    <tr><td>SV venas pulmonares y TSVI</td><td>3–5 mm</td></tr>
+    <tr><td>SV Doppler tisular</td><td>5–10 mm</td></tr>
+    <tr><td>Escala Doppler tisular</td><td>Cerca de ±20 cm/s</td></tr>
+    <tr><td>Ángulo Doppler</td><td>Alineación &lt; 20°, corrección en 0°</td></tr>
+    <tr><td>Barrido diastólico y TDI</td><td>Rápido, equivalente a 50–100 mm/s</td></tr>
+    <tr><td>Barrido respiratorio</td><td>Lento, cerca de 25 mm/s</td></tr>
+    <tr><td>Persistencia en cardiaco</td><td>0–1</td></tr>
+    <tr><td>Zonas focales en cardiaco</td><td>1</td></tr>
+    <tr><td>MI en opacificación del VI</td><td>Bajo, en general &lt; 0,3; foco en anillo mitral</td></tr>
+    <tr><td>Atenuación</td><td>≈ 0,5 dB/cm/MHz, ida y vuelta</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ ANEXO C ============ -->
+<section class="mod" id="ac" data-n="C" data-t="Equivalencias con otras marcas" data-group="Anexos">
+  <p class="mod-n">Anexo C</p>
+  <h1>Equivalencias con otras marcas</h1>
+  <p class="lead">Si aprendiste en otro equipo, esta tabla traduce conceptos. Son funciones análogas, no idénticas: los algoritmos difieren.</p>
+  <div class="tw"><table>
+    <tr><th>Mindray M9</th><th>Concepto</th><th>Análogo aproximado</th></tr>
+    <tr><td><span class="k">iClear</span></td><td>Supresión de moteado</td><td>SRI (GE), XRES (Philips)</td></tr>
+    <tr><td><span class="k">iBeam</span></td><td>Compuesto espacial</td><td>CrossXBeam (GE), SonoCT (Philips)</td></tr>
+    <tr><td><span class="k">iTouch</span></td><td>Optimización automática</td><td>Auto Optimize (GE), iSCAN (Philips)</td></tr>
+    <tr><td><span class="k">PSH</span></td><td>Armónico por manipulación de fase</td><td>Armónico por inversión de pulso</td></tr>
+    <tr><td><span class="k">Free Xros M</span></td><td>Modo M anatómico</td><td>Anatomical M-Mode</td></tr>
+    <tr><td><span class="k">TT QA</span></td><td>Seguimiento de textura</td><td>AFI (GE), AutoStrain (Philips)</td></tr>
+    <tr><td><span class="k">TVD</span></td><td>Doppler tisular pulsado</td><td>PW TDI</td></tr>
+    <tr><td><span class="k">Echo Boost</span></td><td>Procesamiento adaptativo cardiaco</td><td>Sin equivalente directo claro</td></tr>
+    <tr><td><span class="k">QSave</span></td><td>Guardar preset</td><td>Presets de usuario</td></tr>
+    <tr><td><span class="k">iWorks</span></td><td>Protocolo guiado</td><td>Scan Assist (GE), SmartExam (Philips)</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ EXAMEN ============ -->
+<section class="mod" id="ex" data-n="✓" data-t="Examen final por casos" data-group="Anexos">
+  <p class="mod-n">Examen final</p>
+  <h1>Examen final por casos</h1>
+  <p class="lead">Ocho situaciones de consulta. Responde antes de mirar la explicación.</p>
+  <p class="muted" id="score">Respuestas correctas: 0 de 8</p>
+  <div class="quiz exam">
+    <div class="q"><p>1. Hombre obeso, apical 4C: aurículas llenas de ruido granular y endocardio lateral apenas visible con HRes. ¿Primer cambio?</p>
+      <button class="opt">Subir ganancia y TGC lejana</button>
+      <button class="opt" data-ok>Pasar a HPen y reevaluar antes de tocar la ganancia</button>
+      <button class="opt">Subir persistencia a 4</button>
+      <div class="fb">El ruido del campo lejano es atenuación. Baja la banda de frecuencia primero; la ganancia amplificaría el ruido.</div></div>
+    <div class="q"><p>2. Necesitas TT QA en una paciente con frecuencia cardiaca de 110 lpm; el equipo muestra 38 cuadros/s.</p>
+      <button class="opt">Adquirir igual; el algoritmo interpola</button>
+      <button class="opt" data-ok>Estrechar el sector y ajustar profundidad hasta superar 60 cuadros/s</button>
+      <button class="opt">Subir a dos zonas focales</button>
+      <div class="fb">A mayor frecuencia cardiaca, menos cuadros por ciclo. Hay que compensar con geometría.</div></div>
+    <div class="q"><p>3. Jet mitral excéntrico que se ve pequeño con Nyquist de 70 cm/s y ganancia baja; la clínica sugiere IM significativa.</p>
+      <button class="opt">Bajar Nyquist a 30 cm/s para agrandarlo</button>
+      <button class="opt" data-ok>Ajustar ganancia de color al umbral correcto y evaluar vena contracta, PISA y flujo en venas pulmonares</button>
+      <button class="opt">Cambiar a mapa de varianza y graduar por área</button>
+      <div class="fb">Los jets excéntricos se subestiman por área. Corrige la ganancia y usa parámetros menos dependientes del ajuste.</div></div>
+    <div class="q"><p>4. Sospechas trombo apical: ves una imagen en el ápex que no cambia entre sístole y diástole y cambia de forma con otra banda de frecuencia.</p>
+      <button class="opt" data-ok>Probable artefacto de campo cercano; confirma con otra ventana, color de escala baja o contraste</button>
+      <button class="opt">Trombo laminar; reportar</button>
+      <button class="opt">Subir ganancia para definirlo</button>
+      <div class="fb">Una estructura real se mueve con la anatomía y persiste al cambiar parámetros.</div></div>
+    <div class="q"><p>5. Tiempo de aceleración pulmonar de 80 ms con muesca, pero el SV está pegado a la pared del tracto de salida.</p>
+      <button class="opt">Válido; la muesca lo confirma</button>
+      <button class="opt" data-ok>Repetir con SV centrado justo proximal a la válvula y barrido rápido</button>
+      <button class="opt">Cambiar a CW</button>
+      <div class="fb">El flujo cerca de la pared es más lento y distorsiona el perfil. CW no localiza.</div></div>
+    <div class="q"><p>6. Mides e' lateral en 6 cm/s; el espectro es brillante, grueso y el sector está centrado en el septum.</p>
+      <button class="opt">Aceptar el valor</button>
+      <button class="opt" data-ok>Estrechar el sector hacia la pared lateral, alinear, bajar ganancia y repetir</button>
+      <button class="opt">Subir escala a ±50 cm/s</button>
+      <div class="fb">Mala alineación subestima e'; la saturación distorsiona el pico.</div></div>
+    <div class="q"><p>7. Guardaste un apical 4C con profundidad de 22 cm en una paciente pequeña. ¿Qué puedes hacer en la revisión?</p>
+      <button class="opt">Reducir la profundidad sobre datos crudos</button>
+      <button class="opt" data-ok>Nada útil para la geometría; hay que readquirir</button>
+      <button class="opt">Usar pan zoom, que equivale</button>
+      <div class="fb">Profundidad, sector y foco quedan fijos al adquirir. El pan zoom solo amplía píxeles.</div></div>
+    <div class="q"><p>8. Estudio con solución salina: la AD está saturada en blanco y no distingues burbujas aisladas en la AI.</p>
+      <button class="opt">Subir rango dinámico al máximo</button>
+      <button class="opt" data-ok>Bajar ganancia antes de la siguiente inyección y adquirir clip prospectivo por ciclos</button>
+      <button class="opt">Activar LVO</button>
+      <div class="fb">Con ganancia algo menor, las burbujas se ven como puntos discretos. La solución salina no requiere modo de contraste.</div></div>
+  </div>
+</section>
+
+</main>
+
+<script>
+(function(){
+  const mods=[...document.querySelectorAll('.mod')];
+  const learn=mods.filter(m=>m.id!=='inicio');
+  const toc=document.getElementById('toc'), map=document.getElementById('map');
+  const drawer=document.getElementById('drawer'), openBtn=document.getElementById('openToc');
+  const KEY='m9curso-progreso';
+  let done=new Set();
+
+  // Índice y mapa
+  let lastGroup='';
+  mods.forEach(m=>{
+    const g=m.dataset.group;
+    if(g!==lastGroup && m.id!=='inicio'){const s=document.createElement('li');s.className='sep';s.textContent=g;toc.appendChild(s);lastGroup=g;}
+    const li=document.createElement('li');
+    li.innerHTML='<a href="#'+m.id+'"><span class="n">'+(m.dataset.n||'·')+'</span><span>'+m.dataset.t+'</span><span class="ok" data-ok-for="'+m.id+'"></span></a>';
+    toc.appendChild(li);
+    if(m.id!=='inicio'){
+      const a=document.createElement('a');a.href='#'+m.id;
+      a.innerHTML='<span class="n">'+(/^\d+$/.test(m.dataset.n)?'Módulo '+m.dataset.n:m.dataset.n==='✓'?'Examen':'Anexo '+m.dataset.n)+'</span>'+m.dataset.t;
+      map.appendChild(a);
+    }
+  });
+
+  // Botón completar y paginador en cada módulo
+  learn.forEach((m,i)=>{
+    const b=document.createElement('button');b.className='complete';b.dataset.mod=m.id;
+    b.addEventListener('click',()=>{done.has(m.id)?done.delete(m.id):done.add(m.id);save();paint();});
+    m.appendChild(b);
+    const pg=document.createElement('div');pg.className='pager';
+    const prev=mods[mods.indexOf(m)-1], next=mods[mods.indexOf(m)+1];
+    if(prev){const p=document.createElement('button');p.innerHTML='<small>Anterior</small>'+prev.dataset.t;p.onclick=()=>go(prev.id);pg.appendChild(p);}
+    if(next){const n=document.createElement('button');n.className='next';n.innerHTML='<small>Siguiente</small>'+next.dataset.t;n.onclick=()=>go(next.id);pg.appendChild(n);}
+    m.appendChild(pg);
+  });
+  const startPg=document.createElement('div');startPg.className='pager';
+  const sb=document.createElement('button');sb.className='next';sb.innerHTML='<small>Empezar</small>'+learn[0].dataset.t;sb.onclick=()=>go(learn[0].id);
+  startPg.appendChild(sb);document.getElementById('inicio').insertBefore(startPg,document.querySelector('#inicio footer'));
+
+  function paint(){
+    document.querySelectorAll('.complete').forEach(b=>{const d=done.has(b.dataset.mod);b.classList.toggle('is-done',d);b.textContent=d?'Completado ✓':'Marcar como completado';});
+    document.querySelectorAll('[data-ok-for]').forEach(s=>s.textContent=done.has(s.dataset.okFor)?'✓':'');
+    document.getElementById('bar').style.width=Math.round(done.size/learn.length*100)+'%';
+  }
+  async function save(){try{if(window.storage)await window.storage.set(KEY,JSON.stringify([...done]),false);}catch(e){}}
+  async function load(){try{if(window.storage){const r=await window.storage.get(KEY);if(r&&r.value)done=new Set(JSON.parse(r.value));}}catch(e){}paint();}
+
+  // Navegación
+  function show(id){
+    const t=mods.find(m=>m.id===id)||mods[0];
+    mods.forEach(m=>m.classList.toggle('show',m===t));
+    document.querySelectorAll('.toc a').forEach(a=>a.toggleAttribute('aria-current',a.getAttribute('href')==='#'+t.id));
+    document.querySelectorAll('.toc a[aria-current]').forEach(a=>a.setAttribute('aria-current','page'));
+    document.getElementById('topSub').textContent=t.id==='inicio'?'Portada':(/^\d+$/.test(t.dataset.n)?'Módulo '+t.dataset.n+' · ':'')+t.dataset.t;
+    window.scrollTo(0,0);
+  }
+  function go(id){if(location.hash==='#'+id)show(id);else location.hash=id;}
+  window.addEventListener('hashchange',()=>{show(location.hash.slice(1));closeD();});
+  function openD(){drawer.classList.add('open');openBtn.setAttribute('aria-expanded','true');}
+  function closeD(){drawer.classList.remove('open');openBtn.setAttribute('aria-expanded','false');}
+  openBtn.onclick=openD;document.getElementById('closeToc').onclick=closeD;
+  document.addEventListener('keydown',e=>{if(e.key==='Escape')closeD();});
+  toc.addEventListener('click',e=>{const a=e.target.closest('a');if(a&&a.getAttribute('href')===location.hash){closeD();}});
+
+  // Autoevaluación
+  document.querySelectorAll('.q').forEach(q=>{
+    q.querySelectorAll('.opt').forEach(o=>o.addEventListener('click',()=>{
+      if(q.classList.contains('done'))return;
+      q.classList.add('done');
+      q.querySelectorAll('.opt').forEach(x=>{if(x.hasAttribute('data-ok'))x.classList.add('right');else if(x===o)x.classList.add('wrong');});
+      q.dataset.correct=o.hasAttribute('data-ok')?'1':'0';
+      const ex=q.closest('.exam');
+      if(ex){const n=[...ex.querySelectorAll('.q')].filter(z=>z.dataset.correct==='1').length;document.getElementById('score').textContent='Respuestas correctas: '+n+' de 8';}
+    }));
+  });
+
+  // Simulador del sector
+  const fan=document.getElementById('fan');
+  const sD=document.getElementById('sDepth'), sA=document.getElementById('sAngle'), sF=document.getElementById('sFoc');
+  let dens=1.6, densL='M';
+  document.querySelectorAll('#segDens button').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelectorAll('#segDens button').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true');dens=+b.dataset.v;densL=b.textContent;draw();
+  }));
+  [sD,sA,sF].forEach(s=>s.addEventListener('input',draw));
+  function pt(cx,cy,r,deg){const a=(90-deg)*Math.PI/180;return [cx+r*Math.cos(a),cy+r*Math.sin(a)];}
+  function draw(){
+    const d=+sD.value, ang=+sA.value, f=+sF.value;
+    const lines=Math.round(ang*dens), fr=Math.round(77000/(d*lines*f));
+    document.getElementById('vDepth').textContent=d+' cm';
+    document.getElementById('vAngle').textContent=ang+'°';
+    document.getElementById('vDens').textContent=densL;
+    document.getElementById('vFoc').textContent=f;
+    document.getElementById('frOut').textContent=fr;
+    let z;
+    if(fr<25)z='Bajo: el movimiento valvular se ve entrecortado.';
+    else if(fr<40)z='Suficiente para 2D de rutina.';
+    else if(fr<=80)z='Rango recomendado para seguimiento de textura.';
+    else if(fr<100)z='Alto: margen para taquicardia o estrés.';
+    else z='Nivel útil para Doppler tisular color.';
+    document.getElementById('frZone').textContent=z+' ('+lines+' líneas)';
+    const cx=160, cy=12, maxR=196, r=maxR*(d/24), half=ang/2;
+    let s='';
+    // marco de referencia a 24 cm y 90°
+    const [ax,ay]=pt(cx,cy,maxR,-45),[bx,by]=pt(cx,cy,maxR,45);
+    s+='<path d="M'+cx+' '+cy+' L'+ax+' '+ay+' A'+maxR+' '+maxR+' 0 0 0 '+bx+' '+by+' Z" fill="none" stroke="#1F4B70" stroke-dasharray="3 4"/>';
+    // líneas de exploración
+    const shown=Math.max(6,Math.min(48,Math.round(lines/4)));
+    for(let i=0;i<shown;i++){const deg=-half+(ang*i/(shown-1));const [x,y]=pt(cx,cy,r,deg);s+='<line x1="'+cx+'" y1="'+cy+'" x2="'+x.toFixed(1)+'" y2="'+y.toFixed(1)+'" stroke="#C4923A" stroke-opacity=".28" stroke-width="1"/>';}
+    const [px,py]=pt(cx,cy,r,-half),[qx,qy]=pt(cx,cy,r,half);
+    s+='<path d="M'+cx+' '+cy+' L'+px.toFixed(1)+' '+py.toFixed(1)+' A'+r.toFixed(1)+' '+r.toFixed(1)+' 0 0 0 '+qx.toFixed(1)+' '+qy.toFixed(1)+' Z" fill="rgba(196,146,58,.07)" stroke="#C4923A" stroke-width="1.5"/>';
+    // zonas focales
+    for(let k=1;k<=f;k++){const fr_=r*(k/(f+1));const [mx,my]=pt(cx,cy,fr_,half);s+='<path d="M'+(mx+10).toFixed(1)+' '+my.toFixed(1)+' l8 -5 v10 z" fill="#ECE7DC"/>';}
+    s+='<text x="8" y="16" fill="#9DB1C2" font-size="11" font-family="IBM Plex Mono, monospace">Referencia: 24 cm, 90°</text>';
+    fan.innerHTML=s;
+  }
+  draw();
+  show(location.hash.slice(1)||'inicio');
+  load();
+})();
+</script>
+</body>
+</html>
